@@ -12,6 +12,13 @@ if( isset($_REQUEST["debugflag"])) {
 // this stops the java scrip from being written because this is a microservice API
 $suppress_javascript= true;
 
+function generateGUID() {
+	$data = random_bytes(16);
+	$data[6] = chr(ord($data[6]) & 0x0f | 0x40);
+	$data[8] = chr(ord($data[8]) & 0x3f | 0x80);
+	return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
+}
+
 // be sure we can find the function file for inclusion
 if ( file_exists( 'ccu_include/ccu_function.php')) {
 	require_once( 'ccu_include/ccu_function.php');
@@ -46,10 +53,9 @@ $device_ID  	=  urldecode($_REQUEST["DeviceID"]); //-alphanumeric up to 60 chara
 $requestDate   	= $_REQUEST["Date"];//- date/time as a string � alphanumeric up to 20 [format:  MM/DD/YYYY HH:mm]
 $security_code 	= $_REQUEST["SecurityCode"];//- date/time as a string � alphanumeric up to 20 [format:  MM/DD/YYYY HH:mm]
 $key   			= $_REQUEST["Key"];// � alphanumeric 40, SHA-1 hash of Mobile Device ID + date string + secret phrase
-/*
-$longitude   	= $_REQUEST["Longitude"];
-$latitude   	= $_REQUEST["Latitude"];
-*/
+$username       = urldecode($_REQUEST["UserName"]);		// alphanumeric, 10 characters
+$password       = urldecode($_REQUEST["Password"]);		// alphanumeric, 10 characters
+
 $hash = sha1($device_ID . $requestDate);
 
 // RKG 11/30/2013

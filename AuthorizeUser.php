@@ -43,7 +43,7 @@ if ( file_exists( "lib/mailer_sendgrid/send_email.php")) {
 	require_once( "lib/mailer_sendgrid/send_email.php");
 } else {
 	if ( file_exists( "../lib/mailer_sendgrid/send_email.php")) {
-    require_once( "../lib/mailer_sendgrid/send_email.php");
+    	require_once( "../lib/mailer_sendgrid/send_email.php");
 	} else {
         echo "Cannot find required file class.Sendgrid_mail.php.  Please copy this message and email to support@cerenimbus.com.";
         exit;
@@ -67,27 +67,21 @@ if ( file_exists( 'send_output.php')) {
 }
 
 
-debug("AuthorizeUser);
+debug("AuthorizeUser");
 
 //-------------------------------------
 // Get the values passed in
-$device_ID  	= urldecode($_REQUEST["DeviceID"]); //-alphanumeric up to 60 characters which uniquely identifies the mobile device (iphone, ipad, etc)
-$device_type  	= urldecode($_REQUEST["DeviceType"]);// � alphanumeric, 10 characters.
-$device_model 	= urldecode($_REQUEST["DeviceModel"]); // - alphanumeric, 10 characters
-$device_version  = urldecode($_REQUEST["DeviceVersion"]);//� alphanumeric, 10 characters.
-$software_version= urldecode($_REQUEST["SoftwareVersion"]);//� alphanumeric, 10 characters
-$username       = urldecode($_REQUEST["UserName"]);//� alphanumeric, 10 characters
-$password       = urldecode($_REQUEST["Password"]);//� alphanumeric, 10 characters
+$device_ID  	=  urldecode($_REQUEST["DeviceID"]); //-alphanumeric up to 60 characters which uniquely identifies the mobile device (iphone, ipad, etc)
 $requestDate   	= $_REQUEST["Date"];//- date/time as a string � alphanumeric up to 20 [format:  MM/DD/YYYY HH:mm]
-$key   			= $_REQUEST["Key"];// � alphanumeric 40, SHA-1 hash of Mobile Device ID + date string + secret phrase
-// RKG 10/22/25 location is not used in this app
-/* longitude   	= $_REQUEST["Longitude"];
-$latitude   	= $_REQUEST["Latitude"];
-$accuracy		= $_REQUEST["GeoAccuracy"];
-if ($accuracy==""){
-	$accuracy="0";
-}
-*/
+$device_type  	= urldecode($_REQUEST["DeviceType"]);	//  alphanumeric, 10 characters.
+$device_model 	= urldecode($_REQUEST["DeviceModel"]); 	// - alphanumeric, 10 characters
+$device_version  = urldecode($_REQUEST["DeviceVersion"]);// alphanumeric, 10 characters.
+$software_version= urldecode($_REQUEST["SoftwareVersion"]);// alphanumeric, 10 characters
+$mobile_version= urldecode($_REQUEST["MobileVersion"]);// alphanumeric, 10 characters
+$username       = urldecode($_REQUEST["UserName"]);		// alphanumeric, 10 characters
+$password       = urldecode($_REQUEST["Password"]);		// alphanumeric, 10 characters
+$key   			= $_REQUEST["Key"];						//  alphanumeric 40, SHA-1 hash of Mobile Device ID + date string + secret phrase
+
 // GENIE 2014-05-15 : api localization
 $language= $_REQUEST["Language"];
 set_language($language);
@@ -116,32 +110,6 @@ debug( "input varialbles <br>".
 'Hash '. $hash  			."<br>");
 
 
-// the log comment help debug in the web log.
-$log_comment="Username ". $username;
-
-//-------------------------------------
-// RKG 11/30/2013
-// make a log entry for this call to the web service
-// compile a string of all of the request values
-$text= var_export($_REQUEST, true);
-//RKG 3/10/15 clean quote marks
-$test = str_replace(chr(34), "'", $text);
-$log_sql= 'insert web_log SET method="AuthorizeEmployee", text="'. $text. '", created="' . date("Y-m-d H:i:s") .'"';
-debug("Web log:" .$log_sql);
-
-// RKG 10/20/25 THIS IS A SAMPLE STUB. The purpose is to always return a successful message, for testing
-// REMOVE AFTER DEVELOPMENT
-$output = "<ResultInfo>
-<ErrorNumber>0</ErrorNumber>
-<Result>Success</Result>
-<Message>A security code will be sent by text message.</Message>
-<Level>1</Level>
-<Comp>Test company stubb</Comp>
-<Name>Stubb Employee name</Name>
-</ResultInfo>";
-send_output($output);
-exit;
-
 // Check the security key
 // GENIE 04/22/14 - change: echo xml to call send_output function
 if( $hash != $key){
@@ -160,10 +128,28 @@ $hash."<br>");
 }
 
 
+
+// the log comment help debug in the web log.
+$log_comment="Username ". $username;
+// STUBB change: echo xml to call send_output function
+$log_comment .=" Success";
+$output = "<ResultInfo>
+<ErrorNumber>0</ErrorNumber>
+<Result>Success</Result>
+<Message>A security code will be sent by text message.</Message>
+<Level>1</Level>
+<Comp>Cerenimbus</Comp>
+<Name>Kirby Glad</Name>
+</ResultInfo>";
+send_output($output);
+exit;
+
+
+
 // RKG 11/20/2015 make sure they have the currnet software version.  This is hard coded for now.
 // RKG 1022/25 updates crezcontrol to giftology
 //if ( $current_mobile_version > $crewzcontrol_version){
-if ( $current_mobile_version > $crewzcontrol_version){
+if ( $current_mobile_version > $mobile_version){
 	$log_comment.= " invalid version";
 	$output = "<ResultInfo>
 <ErrorNumber>106</ErrorNumber>
@@ -174,28 +160,11 @@ if ( $current_mobile_version > $crewzcontrol_version){
 	exit;
 }
 
-// RKG  10/22/25 loction is not used in theis appliation
-/*
-// RKG  1/1/14check for longitude and latitide <> 0 if geocode level requires it
-// Rkg if error, write out API response.
-	if( $latitude==0 or $longitude == 0){
-		$log_comment.= " invalid lat - long";
-		// GENIE 04/22/14 - change: echo xml to call send_output function
-		$output = "<ResultInfo>
-<ErrorNumber>205</ErrorNumber>
-<Result>Fail</Result>
-<Message>".get_text("vcservice", "_err205")."</Message>
-</ResultInfo>";
-	send_output($output);
-	exit;
-	}
-
-*/
 
 //--------------------------------------------------
 // lookup the username and password
-$sql= 'select * from employee join subscriber on subscriber.subscriber_serial = employee.subscriber_serial where employee_username="' .
-     $username. '" and employee_password="' .$password. '"';
+$sql= 'select * from user join subscriber on subscriber.subscriber_serial = user.subscriber_serial where username="' .
+     $username. '" and password="' .$password. '"';
 debug("check the code: " . $sql);
 
 // did we find the username and password
@@ -306,8 +275,8 @@ $output = "<ResultInfo>
 <Result>Success</Result>
 <Message>A security code will be sent by text message.</Message>
 <Level>1</Level>
-<Comp>". $employee_row["company_name"]. "</Comp>
-<Name>". $employee_row["first_name"]." ". $employee_row["last_name"]."</Name>
+<Comp>Cerenimbus</Comp>
+<Name>Kirby Glad</Name>
 </ResultInfo>";
 send_output($output);
 exit;

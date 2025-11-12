@@ -11,9 +11,10 @@
 // File: ResetPassword.php
 // Description: Resets a user's password based on authorization code and sends a notification email.
 // Called by: Modules or services requiring a password reset for a user
-// Author: ALC
+// Author: Alfred louis Carpio
 // Created: 10/29/25
 // History: 10/29/25 initial version created
+//          11/11/25 updated author name, error messages and stub
 //***************************************************************
 
 $debugflag = false;
@@ -66,8 +67,18 @@ $password = $_REQUEST["Password"] ?? ''; // new password, minimum 8 characters
 // $longitude = $_REQUEST["Longitude"];
 // $latitude = $_REQUEST["Latitude"];
 
-$language = $_REQUEST["Language"];
-set_language($language);
+// ALC 10/29/25 THIS IS A SAMPLE STUB. The purpose is to always return a successful message, for testing
+$output = "<ResultInfo>
+    <ErrorNumber>0</ErrorNumber>
+    <Result>Success</Result>
+    <Message>This is a test response from ResetPassword API (Giftology).</Message>
+    <Comp>Cerenimbus Inc.</Comp>
+    <Name>Cerenimbus Employee</Name>
+</ResultInfo>";
+
+send_output($output);
+exit;
+
 
 $hash = sha1($device_ID . $requestDate . $authorization_code);
 
@@ -84,7 +95,7 @@ if ($hash != $key) {
     $output = "<ResultInfo>
 <ErrorNumber>102</ErrorNumber>
 <Result>Fail</Result>
-<Message>" . get_text("rrservice", "_err102b") . "</Message>
+<Message>Security Failure- incorrect hash key</Message>
 </ResultInfo>";
     send_output($output);
     exit;
@@ -122,7 +133,7 @@ if ($rows == 1) {
     $output = "<ResultInfo>
 <ErrorNumber>105</ErrorNumber>
 <Result>Fail</Result>
-<Message>" . get_text("rrservice", "_err105") . "</Message>
+<Message>Username and password does not match Employee records.</Message>
 </ResultInfo>";
     send_output($output);
     exit;
@@ -152,22 +163,6 @@ debug("Giftology email service config loaded"); // changed crewzcontrol -> gifto
 //     debug("Email successfully sent to: " . $to_email);
 // }
 */
-
-//--------------------------------------------------
-// ALC 10/29/25: Stub section returning test data
-debug("ResetPassword STUB returning test XML output");
-
-$output = "<ResultInfo>
-<ErrorNumber>0</ErrorNumber>
-<Result>Success</Result>
-<Message>This is a test response from ResetPassword API (Giftology).</Message>
-<Level>1</Level>
-<Comp>Cerenimbus Inc.</Comp>
-<Name>Test User</Name>
-</ResultInfo>";
-
-send_output($output);
-exit;
 
 ?>
 

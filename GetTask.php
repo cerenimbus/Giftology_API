@@ -11,9 +11,10 @@
 // File: GetTask.php
 // Description: Retrieves a single task based on the provided task serial.
 // Called by: Modules or services that need to fetch a specific task for a user based on task serial
-// Author: ALC
+// Author: Alfred louis Carpio
 // Date: 10/27/25
 // History: 10/27/25 initial version created
+//          11/11/25 updated author name, error messages and stub
 //***************************************************************
 
 $debugflag = false;
@@ -25,41 +26,26 @@ if (isset($_REQUEST["debugflag"])) {
 $suppress_javascript = true;
 
 //-------------------------------------
-// INCLUDE CORE FUNCTIONS
+// Include necessary function files with error checking
 if (file_exists('ccu_include/ccu_function.php')) {
     require_once('ccu_include/ccu_function.php');
-} else if (file_exists('../ccu_include/ccu_function.php')) {
-    require_once('../ccu_include/ccu_function.php');
 } else {
-    echo "Cannot find required file ccu_function.php. Contact programmer.";
-    exit;
-}
-
-//-------------------------------------
-// INCLUDE send_output.php
-if (file_exists('send_output.php')) {
-    require_once('send_output.php');
-} else if (file_exists('../send_output.php')) {
-    require_once('../send_output.php');
-}
-
-//-------------------------------------
-// FALLBACK send_output (for safety)
-if (!function_exists('send_output')) {
-    function send_output($output) {
-        header("Content-Type: text/xml; charset=utf-8");
-        echo $output ?: "<ResultInfo><ErrorNumber>500</ErrorNumber><Result>Fail</Result><Message>Empty output</Message></ResultInfo>";
+    if (!file_exists('../ccu_include/ccu_function.php')) {
+        echo "Cannot find required file ../ccu_include/ccu_function.php. Contact programmer.";
         exit;
     }
+    require_once('../ccu_include/ccu_function.php');
 }
 
-//-------------------------------------
-// DEBUG WRAPPER
-if (!function_exists('debug')) {
-    function debug($msg) {
-        global $debugflag;
-        if ($debugflag) error_log("[DEBUG] " . $msg);
+// Include send_output.php with error checking
+if (file_exists('send_output.php')) {
+    require_once('send_output.php');
+} else {
+    if (!file_exists('../ccu_include/send_output.php')) {
+        echo "Cannot find required file ../ccu_include/send_output.php. Contact programmer.";
+        exit;
     }
+    require_once('../ccu_include/send_output.php');
 }
 
 debug("GetTask");
@@ -80,10 +66,28 @@ if (empty($device_ID) || empty($authorization_code) || empty($key) || empty($tas
     $output = "<ResultInfo>
         <ErrorNumber>101</ErrorNumber>
         <Result>Fail</Result>
-        <Message>Missing required parameters (DeviceID, AC, Key, or Task).</Message>
+        <Message>Request not recognized</Message>
     </ResultInfo>";
     send_output($output);
 }
+
+
+// ALC 10/29/25 THIS IS A SAMPLE STUB. The purpose is to always return a successful message, for testing
+    $output = '<ResultInfo>
+        <ErrorNumber>0</ErrorNumber>
+        <Result>Success</Result>
+        <Message>Stub single task (sample data)</Message>
+        <Task>
+            <Name>System Maintenance</Name>
+            <Serial>1003</Serial>
+            <Contact>IT Department</Contact>
+            <Date>10/30/2025</Date>
+            <Status>0</Status>
+        </Task>
+    </ResultInfo>';
+
+    send_output($output);
+    exit;
 
 //-------------------------------------
 // COMPUTE AND VERIFY HASH
@@ -93,7 +97,7 @@ if ($hash != $key) {
     $output = "<ResultInfo>
         <ErrorNumber>102</ErrorNumber>
         <Result>Fail</Result>
-        <Message>" . get_text("rrservice", "_err102b") . "</Message>
+        <Message>Security Failure- incorrect hash key</Message>
     </ResultInfo>";
     send_output($output);
 }
@@ -106,7 +110,7 @@ if ($current_system_version > (int)$mobile_version) {
     $output = "<ResultInfo>
         <ErrorNumber>106</ErrorNumber>
         <Result>Fail</Result>
-        <Message>" . get_text("rrservice", "_err106") . "</Message>
+        <Message>Giftology version not current</Message>
     </ResultInfo>";
     send_output($output);
 }
@@ -125,7 +129,7 @@ if (!$result || mysqli_error($mysqli_link)) {
     $output = "<ResultInfo>
         <ErrorNumber>103</ErrorNumber>
         <Result>Fail</Result>
-        <Message>" . get_text("rrservice", "_err103a") . " " . htmlspecialchars($error) . "</Message>
+        <Message>MySQL programming error</Message>
     </ResultInfo>";
     send_output($output);
 }
@@ -135,7 +139,7 @@ if (!$auth_row) {
     $output = "<ResultInfo>
         <ErrorNumber>105</ErrorNumber>
         <Result>Fail</Result>
-        <Message>Authorization code does not match any employee.</Message>
+        <Message>Username and password does not match Employee records.</Message>
     </ResultInfo>";
     send_output($output);
 }
@@ -161,7 +165,7 @@ if (!$result || mysqli_error($mysqli_link)) {
     $output = "<ResultInfo>
         <ErrorNumber>103</ErrorNumber>
         <Result>Fail</Result>
-        <Message>" . get_text("rrservice", "_err103a") . " " . htmlspecialchars($error) . "</Message>
+        <Message>MySQL programming error</Message>
     </ResultInfo>";
     send_output($output);
 }
@@ -171,7 +175,7 @@ if (!$task) {
     $output = "<ResultInfo>
         <ErrorNumber>0</ErrorNumber>
         <Result>Fail</Result>
-        <Message>No task found for the specified serial.</Message>
+        <Message>No task found</Message>
     </ResultInfo>";
     send_output($output);
 }
@@ -197,30 +201,4 @@ $output = '<ResultInfo>
 send_output($output);
 exit;
 
-//-------------------------------------
-// STUB MODE FOR TESTING ONLY
-//-------------------------------------
-// ALC 10/29/25
-// This section returns static/sample XML data for GetTask without querying the database.
-// It is triggered only when the 'debugflag' parameter is set in the request (e.g., ?debugflag=1).
-// Use this mode for testing the API response format. Do NOT use this in production.
-if ($debugflag) {
-    debug("Running GetTask in STUB mode, returning sample XML data.");
-
-    $output = '<ResultInfo>
-        <ErrorNumber>0</ErrorNumber>
-        <Result>Success</Result>
-        <Message>Stub single task (sample data)</Message>
-        <Task>
-            <Name>System Maintenance</Name>
-            <Serial>1003</Serial>
-            <Contact>IT Department</Contact>
-            <Date>10/30/2025</Date>
-            <Status>0</Status>
-        </Task>
-    </ResultInfo>';
-
-    send_output($output);
-    exit;
-}
 ?>

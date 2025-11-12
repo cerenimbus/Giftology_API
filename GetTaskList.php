@@ -11,9 +11,10 @@
 // File: GetTaskList.php
 // Description: Retrieves a list of tasks for a user based on the provided authorization code.
 // Called by: Modules/services requiring retrieval of all tasks for a user based on authorization code
-// Author: ALC
+// Author: Alfred louis Carpio
 // Created: 10/23/25
 // History: 10/23/25 initial version created
+//          11/11/25 updated author name, error messages and stub
 //***************************************************************
 
 $debugflag = false;
@@ -66,11 +67,43 @@ if (empty($device_ID) || empty($authorization_code) || empty($key)) {
     $output = "<ResultInfo>
                    <ErrorNumber>101</ErrorNumber>
                    <Result>Fail</Result>
-                   <Message>Missing required parameters.</Message>
+                   <Message>Request not recognized</Message>
                </ResultInfo>";
     send_output($output);
     exit;
 }
+
+// ALC 10/29/25 THIS IS A SAMPLE STUB. The purpose is to always return a successful message, for testing
+    $output = '<ResultInfo>
+        <ErrorNumber>0</ErrorNumber>
+        <Result>Success</Result>
+        <Message>Stub Task list (sample data)</Message>
+        <Selections>
+            <Task>
+                <Name>Inventory Check</Name>
+                <Serial>1001</Serial>
+                <Contact>Warehouse A</Contact>
+                <Date>10/29/2025</Date>
+                <Status>0</Status>
+            </Task>
+            <Task>
+                <Name>Delivery Dispatch</Name>
+                <Serial>1002</Serial>
+                <Contact>Stub Employee Name</Contact>
+                <Date>10/29/2025</Date>
+                <Status>1</Status>
+            </Task>
+            <Task>
+                <Name>System Maintenance</Name>
+                <Serial>1003</Serial>
+                <Contact>IT Department</Contact>
+                <Date>10/30/2025</Date>
+                <Status>0</Status>
+            </Task>
+        </Selections>
+    </ResultInfo>';
+    send_output($output);
+    exit;
 
 //-------------------------------------
 // Compute and verify security hash
@@ -80,7 +113,7 @@ if ($hash != $key) {
     $output = "<ResultInfo>
                    <ErrorNumber>102</ErrorNumber>
                    <Result>Fail</Result>
-                   <Message>" . get_text("rrservice", "_err102b") . "</Message>
+                   <Message>Security Failure- incorrect hash key</Message>
                </ResultInfo>";
     send_output($output);
     exit;
@@ -101,7 +134,7 @@ if ($current_mobile_version > $mobile_version) {
     $output = "<ResultInfo>
                    <ErrorNumber>106</ErrorNumber>
                    <Result>Fail</Result>
-                   <Message>" . get_text("rrservice", "_err106") . "</Message>
+                   <Message>Giftology version not current</Message>
                </ResultInfo>";
     send_output($output);
     exit;
@@ -122,7 +155,7 @@ if (!$result || mysqli_error($mysqli_link)) {
     $output = "<ResultInfo>
                    <ErrorNumber>103</ErrorNumber>
                    <Result>Fail</Result>
-                   <Message>SQL Error: " . htmlspecialchars($error) . "</Message>
+                   <Message>MySQL programming error</Message>
                </ResultInfo>";
     send_output($output);
     exit;
@@ -133,7 +166,7 @@ if (!$authorization_row) {
     $output = "<ResultInfo>
                    <ErrorNumber>105</ErrorNumber>
                    <Result>Fail</Result>
-                   <Message>Authorization code does not match any employee.</Message>
+                   <Message>Username and password does not match Employee records.</Message>
                </ResultInfo>";
     send_output($output);
     exit;
@@ -167,7 +200,7 @@ if (!$result || mysqli_error($mysqli_link)) {
     $output = "<ResultInfo>
                    <ErrorNumber>103</ErrorNumber>
                    <Result>Fail</Result>
-                   <Message>SQL Error: " . htmlspecialchars($error) . "</Message>
+                   <Message>MySQL programming error</Message>
                </ResultInfo>";
     send_output($output);
     exit;
@@ -214,45 +247,4 @@ $output .= '</Selections>
 send_output($output);
 exit;
 
-//-------------------------------------
-// STUB MODE FOR TESTING ONLY
-//-------------------------------------
-// ALC 10/29/25
-// This section returns static/sample XML data for GetTaskList without querying the database.
-// It is triggered only when the 'debugflag' parameter is set in the request (e.g., ?debugflag=1).
-// Use this mode for testing the API response format. Do NOT use this in production.
-if ($debugflag) {
-    debug("Running in STUB mode returning sample XML data.");
-
-    $output = '<ResultInfo>
-                   <ErrorNumber>0</ErrorNumber>
-                   <Result>Success</Result>
-                   <Message>Stub Task list (sample data)</Message>
-                   <Selections>
-                       <Task>
-                           <Name>Inventory Check</Name>
-                           <Serial>1001</Serial>
-                           <Contact>Warehouse A</Contact>
-                           <Date>10/29/2025</Date>
-                           <Status>0</Status>
-                       </Task>
-                       <Task>
-                           <Name>Delivery Dispatch</Name>
-                           <Serial>1002</Serial>
-                           <Contact>Stub Employee Name</Contact>
-                           <Date>10/29/2025</Date>
-                           <Status>1</Status>
-                       </Task>
-                       <Task>
-                           <Name>System Maintenance</Name>
-                           <Serial>1003</Serial>
-                           <Contact>IT Department</Contact>
-                           <Date>10/30/2025</Date>
-                           <Status>0</Status>
-                       </Task>
-                   </Selections>
-               </ResultInfo>';
-    send_output($output);
-    exit;
-}
 ?>

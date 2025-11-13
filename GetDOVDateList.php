@@ -1,77 +1,177 @@
 <?php
 /*****************************************************************
-  Cerenimbus
+ Copyright Cerenimbus Inc
+ ALL RIGHTS RESERVED. Proprietary and confidential
 
-  file:           GetDovDateList
-  description:    retrieves a list of dov dates for the giftology mobile app.
-                  validates security hash and authorization before fetching data.
+ Description:
+    GetDOVDateList.php for Giftology API 
 
-  called by:      giftology mobile app
+ Called by:
+    Giftology Mobile App 
 
-  author:         Karl Matthew Linao– 10/19/2025
-  history:
-      10/19/2025  start
-      10/28/2025  stubs
-******************************************************************/
+ Author: Karl Matthew Linao
+ Date:   11/25/25
+ History:
+    10/19/2025   KML - Start
+    10/28/2025   KML - Stubs
+    11/14/2025   KML - Modified logic to fetch Event Dates (DOV Dates) based on Giftology DD.
+    11/15/2025   KML - Converted to Stub version for offline testing per Giftology 
+ ******************************************************************/
 
-require_once('ccu_include/ccu_function.php');
+//---------------------------------------------------------------
+//  Initialization and configuration
+//---------------------------------------------------------------
+$debugflag = false;
+$suppress_javascript = true; // Suppress JS since this is an API endpoint
+
+// Attempt to include the main function file (required for logging, DB connection, etc.)
+if (file_exists('ccu_include/ccu_function.php')) {
+    require_once('ccu_include/ccu_function.php');
+} else {
+    if (!file_exists('../ccu_include/ccu_function.php')) {
+        echo "Cannot find required file ../ccu_include/ccu_function.php. Contact programmer.";
+        exit;
+    }
+    require_once('../ccu_include/ccu_function.php');
+}
+
+// Include output handler
 require_once('send_output.php');
 
-///// cerenimbus web service stub /////
+debug("GetDOVDateList called");
 
-$device_id      = $_GET['DeviceID'] ?? '';
-$request_date   = $_GET['Date'] ?? '';
-$hash_key       = $_GET['Key'] ?? '';
-$auth_code      = $_GET['AC'] ?? '';
-$mobile_version = $_GET['MobileVersion'] ?? '';
-$language       = $_GET['Language'] ?? 'EN';
+//---------------------------------------------------------------
+//  GET PARAMETERS
+//---------------------------------------------------------------
+// Device information and request metadata
+$device_ID   = urldecode($_REQUEST["DeviceID"] ?? "");
+$requestDate = $_REQUEST["Date"] ?? "";
+$authorization_code = $_REQUEST["AC"] ?? "";
+$key = $_REQUEST["Key"] ?? "";
+$longitude = $_REQUEST["Longitude"] ?? 0;
+$latitude  = $_REQUEST["Latitude"] ?? 0;
 
-if ($device_id === '' || $request_date === '' || $hash_key === '' || $auth_code === '') {
-    send_output('Fail', 104, 'required information not supplied', '');
+//---------------------------------------------------------------
+//  STUB SECTION (Return static XML before any validation)
+//---------------------------------------------------------------
+/*
+    RKG 10/20/25 THIS IS A SAMPLE STUB.
+    The purpose is to always return a successful message, for testing.
+    REMOVE AFTER DEVELOPMENT.
+*/
+$output = "<ResultInfo>
+	<ErrorNumber>0</ErrorNumber>
+	<Result>Success</Result>
+	<Message>Security code accepted</Message>
+	<Auth>this is a test authorization code for testing only</Auth>
+</ResultInfo>";
+send_output($output);
+exit;
+
+//---------------------------------------------------------------
+//  NORMAL EXECUTION BELOW (This section will only run after stub removal)
+//---------------------------------------------------------------
+
+// Compute SHA1 hash for security validation
+$hash = sha1($device_ID . $requestDate . $authorization_code);
+
+// Log incoming request (for diagnostics and traceability)
+$text = var_export($_REQUEST, true);
+$test = str_replace(chr(34), "'", $text);
+$log_sql = 'INSERT web_log SET method="GetDOVDateList", text="' . $test . '", created="' . date("Y-m-d H:i:s") . '"';
+debug("Web log: " . $log_sql);
+
+//---------------------------------------------------------------
+//  SECURITY VALIDATION
+//---------------------------------------------------------------
+if ($hash != $key) {
+    $output = "<ResultInfo>
+<ErrorNumber>102</ErrorNumber>
+<Result>Fail</Result>
+<Message>" . get_text("vcservice", "_err102b") . "</Message>
+</ResultInfo>";
+    $log_comment = "Hash:" . $hash . "  and Key:" . $key;
+    send_output($output);
     exit;
 }
 
-$computed_hash = sha1($device_id . $request_date . $auth_code);
-if ($computed_hash !== $hash_key) {
-    send_output('Fail', 102, 'security failure - incorrect hash key', '');
+//---------------------------------------------------------------
+//  GEO VALIDATION (ensure valid coordinates)
+//---------------------------------------------------------------
+if ($latitude == 0 || $longitude == 0) {
+    $output = "<ResultInfo>
+<ErrorNumber>205</ErrorNumber>
+<Result>Fail</Result>
+<Message>" . get_text("vcservice", "_err205") . "</Message>
+</ResultInfo>";
+    send_output($output);
     exit;
 }
 
-$query = "SELECT subscriber_serial FROM authorization_code WHERE authorization_code = ?";
-$stmt = mysqli_prepare($db, $query);
-mysqli_stmt_bind_param($stmt, 's', $auth_code);
-mysqli_stmt_execute($stmt);
-$result = mysqli_stmt_get_result($stmt);
+//---------------------------------------------------------------
+//  AUTHORIZATION CODE VALIDATION (retrieve employee info)
+//---------------------------------------------------------------
+$sql = 'SELECT * FROM authorization_code 
+        JOIN employee ON authorization_code.employee_serial = employee.employee_serial 
+        WHERE employee.deleted_flag=0 
+        AND authorization_code.authorization_code="' . $authorization_code . '"';
+$result = mysqli_query($mysqli_link, $sql);
+if (mysqli_error($mysqli_link)) {
+    debug("SQL Error: " . mysqli_error($mysqli_link));
+    exit;
+}
+$authorization_row = mysqli_fetch_assoc($result);
+$employee_serial = $authorization_row["employee_serial"];
+$subscriber_serial = $authorization_row["subscriber_serial"];
 
-if (mysqli_num_rows($result) === 0) {
-    send_output('Fail', 202, 'invalid authorization code', '');
+//---------------------------------------------------------------
+//  MAIN QUERY SECTION
+//---------------------------------------------------------------
+/*
+    Retrieves DOV (Date of Visit) or Contact Events list
+    for the subscriber based on the Giftology Data Dictionary.
+*/
+$sql = 'SELECT * FROM contact_event WHERE subscriber_serial ="' . $subscriber_serial . '" ORDER BY event_date DESC';
+debug("Get DOV Date list: " . $sql);
+
+$result = mysqli_query($mysqli_link, $sql);
+if (mysqli_error($mysqli_link)) {
+    $error = mysqli_error($mysqli_link);
+    $output = "<ResultInfo>
+<ErrorNumber>103</ErrorNumber>
+<Result>Fail</Result>
+<Message>" . get_text("vcservice", "_err103a") . " " . $error . "</Message>
+</ResultInfo>";
+    send_output($output);
     exit;
 }
 
-$row = mysqli_fetch_assoc($result);
-$subscriber_serial = $row['subscriber_serial'];
+//---------------------------------------------------------------
+//  XML OUTPUT CONSTRUCTION
+//---------------------------------------------------------------
+$output = '<ResultInfo>
+<ErrorNumber>0</ErrorNumber>
+<Result>Success</Result>
+<Message>DOV Date list found</Message>
+<Selections>';
 
-$sql = "SELECT dov_name AS Name, COUNT(*) AS Count 
-        FROM dov_date 
-        WHERE subscriber_serial = ?
-        GROUP BY dov_name
-        ORDER BY dov_name ASC";
-$stmt = mysqli_prepare($db, $sql);
-mysqli_stmt_bind_param($stmt, 'i', $subscriber_serial);
-mysqli_stmt_execute($stmt);
-$result = mysqli_stmt_get_result($stmt);
-
-$xml = '<Selections>';
-while ($row = mysqli_fetch_assoc($result)) {
-    $xml .= '<DOV>';
-    $xml .= '<Name>' . htmlspecialchars($row['Name']) . '</Name>';
-    $xml .= '<Count>' . htmlspecialchars($row['Count']) . '</Count>';
-    $xml .= '</DOV>';
+while ($event_row = mysqli_fetch_assoc($result)) {
+    $output .= '
+    <DOVDate>
+        <EventID>' . $event_row["contact_event_serial"] . '</EventID>
+        <EventName>' . htmlspecialchars($event_row["event_name"]) . '</EventName>
+        <EventDate>' . htmlspecialchars($event_row["event_date"]) . '</EventDate>
+        <Location>' . htmlspecialchars($event_row["event_location"]) . '</Location>
+    </DOVDate>';
 }
-$xml .= '</Selections>';
 
-send_output('Success', 0, 'dov date list found', $xml);
+$output .= '</Selections>
+</ResultInfo>';
 
-///// end stub /////
-mysqli_close($db);
+//---------------------------------------------------------------
+//  SEND FINAL OUTPUT
+//---------------------------------------------------------------
+send_output($output);
+exit;
+
 ?>

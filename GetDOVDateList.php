@@ -35,8 +35,20 @@ if (file_exists('ccu_include/ccu_function.php')) {
     require_once('../ccu_include/ccu_function.php');
 }
 
-// Include output handler
-require_once('send_output.php');
+// this function is used to output the result and to store the result in the log
+debug( "get the send output php");
+// be sure we can find the function file for inclusion
+if ( file_exists( 'send_output.php')) {
+	require_once( 'send_output.php');
+} else {
+	// if we can't find it, terminate
+	if ( !file_exists('../ccu_include/send_output.php')){
+		echo "Cannot find required file ../ccu_include/send_output.php.  Contact programmer.";
+		exit;
+	}
+	require_once('../ccu_include/send_output.php');
+}
+
 
 debug("GetDOVDateList called");
 
@@ -48,8 +60,7 @@ $device_ID   = urldecode($_REQUEST["DeviceID"] ?? "");
 $requestDate = $_REQUEST["Date"] ?? "";
 $authorization_code = $_REQUEST["AC"] ?? "";
 $key = $_REQUEST["Key"] ?? "";
-$longitude = $_REQUEST["Longitude"] ?? 0;
-$latitude  = $_REQUEST["Latitude"] ?? 0;
+
 
 //---------------------------------------------------------------
 //  STUB SECTION (Return static XML before any validation)
@@ -63,7 +74,18 @@ $output = "<ResultInfo>
 	<ErrorNumber>0</ErrorNumber>
 	<Result>Success</Result>
 	<Message>Security code accepted</Message>
-	<Auth>this is a test authorization code for testing only</Auth>
+	<DOVDate>
+        <EventID>121</EventID>
+        <EventName>have a party</EventName>
+        <EventDate>' . htmlspecialchars($event_row["event_date"]) . '</EventDate>
+        <Location>' . htmlspecialchars($event_row["event_location"]) . '</Location>
+    </DOVDate>
+    	<DOVDate>
+        <EventID>121</EventID>
+        <EventName>have a party</EventName>
+        <EventDate>' . htmlspecialchars($event_row["event_date"]) . '</EventDate>
+        <Location>' . htmlspecialchars($event_row["event_location"]) . '</Location>
+    </DOVDate>
 </ResultInfo>";
 send_output($output);
 exit;
@@ -95,18 +117,6 @@ if ($hash != $key) {
     exit;
 }
 
-//---------------------------------------------------------------
-//  GEO VALIDATION (ensure valid coordinates)
-//---------------------------------------------------------------
-if ($latitude == 0 || $longitude == 0) {
-    $output = "<ResultInfo>
-<ErrorNumber>205</ErrorNumber>
-<Result>Fail</Result>
-<Message>" . get_text("vcservice", "_err205") . "</Message>
-</ResultInfo>";
-    send_output($output);
-    exit;
-}
 
 //---------------------------------------------------------------
 //  AUTHORIZATION CODE VALIDATION (retrieve employee info)

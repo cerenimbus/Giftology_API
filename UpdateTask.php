@@ -38,7 +38,20 @@ if ( file_exists('ccu_include/ccu_function.php') ) {
 }
 
 // Include output handler
-require_once('send_output.php');
+// this function is used to output the result and to store the result in the log
+debug( "get the send output php");
+// be sure we can find the function file for inclusion
+if ( file_exists( 'send_output.php')) {
+	require_once( 'send_output.php');
+} else {
+	// if we can't find it, terminate
+	if ( !file_exists('../ccu_include/send_output.php')){
+		echo "Cannot find required file ../ccu_include/send_output.php.  Contact programmer.";
+		exit;
+	}
+	require_once('../ccu_include/send_output.php');
+}
+
 
 //-----------------------------------------------------
 // STUB SECTION - for offline testing only
@@ -105,18 +118,6 @@ if ($hash != $key) {
 	exit;
 }
 
-//-----------------------------------------------------
-// Validate coordinates (if geolocation tracking enabled)
-//-----------------------------------------------------
-if ($latitude == 0 || $longitude == 0) {
-	$output = "<ResultInfo>
-	<ErrorNumber>205</ErrorNumber>
-	<Result>Fail</Result>
-	<Message>" . get_text("vcservice", "_err205") . "</Message>
-	</ResultInfo>";
-	send_output($output);
-	exit;
-}
 
 //-----------------------------------------------------
 // Validate Authorization Code -> Employee -> Subscriber
@@ -154,17 +155,9 @@ debug("Authorized employee_serial: $employee_serial, subscriber_serial: $subscri
 // Update Task Record
 //-----------------------------------------------------
 $update_sql = "UPDATE task SET 
-	task_name = '" . mysqli_real_escape_string($mysqli_link, $task_name) . "',
-	task_description = '" . mysqli_real_escape_string($mysqli_link, $task_description) . "',
-	due_date = '" . mysqli_real_escape_string($mysqli_link, $due_date) . "',
 	status = '" . mysqli_real_escape_string($mysqli_link, $task_status) . "',
-	assigned_to = '" . mysqli_real_escape_string($mysqli_link, $assigned_to) . "',
-	priority_level = '" . mysqli_real_escape_string($mysqli_link, $priority_level) . "',
-	notes = '" . mysqli_real_escape_string($mysqli_link, $notes) . "',
-	modified_by = '" . mysqli_real_escape_string($mysqli_link, $employee_serial) . "',
-	modified_date = NOW()
 	WHERE task_serial = '" . mysqli_real_escape_string($mysqli_link, $task_serial) . "'
-	AND subscriber_serial = '" . mysqli_real_escape_string($mysqli_link, $subscriber_serial) . "'";
+	;
 
 debug("Update SQL: " . $update_sql);
 $result = mysqli_query($mysqli_link, $update_sql);

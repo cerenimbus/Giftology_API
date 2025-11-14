@@ -180,9 +180,6 @@ if (!$task) {
     send_output($output);
 }
 
-$task_date = !empty($task["event_date"]) ? date('m/d/Y', strtotime($task["event_date"])) : '';
-$status = intval($task["status"]);
-
 //-------------------------------------
 // BUILD XML OUTPUT
 $output = '<ResultInfo>
@@ -193,8 +190,8 @@ $output = '<ResultInfo>
         <Name>' . htmlspecialchars($task["workflow_detail_name"]) . '</Name>
         <Serial>' . intval($task["event_serial"]) . '</Serial>
         <Contact>' . htmlspecialchars($task["contact_name"]) . '</Contact>
-        <Date>' . $task_date . '</Date>
-        <Status>' . $status . '</Status>
+        <Date>' . $task["event_date"]. '</Date>
+        <Status>' .$task["status"] . '</Status>
     </Task>
 </ResultInfo>';
 

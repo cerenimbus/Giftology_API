@@ -15,6 +15,7 @@
 // Created: 10/23/25
 // History: 10/23/25 initial version created
 //          11/11/25 updated author name, error messages and stub
+
 //***************************************************************
 
 $debugflag = false;
@@ -176,17 +177,12 @@ $employee_serial = $authorization_row["employee_serial"];
 
 //-------------------------------------
 // Retrieve tasks for this employee
-$sql = 'SELECT 
-            e.event_serial, 
-            wd.workflow_detail_name, 
-            w.workflow_name AS contact_name, 
-            wdt.workflow_detail_type_name, 
-            e.event_date, 
-            e.status
+$sql = 'SELECT *
         FROM event e
         JOIN workflow_detail wd ON e.workflow_detail_serial = wd.workflow_detail_serial
         JOIN workflow w ON wd.workflow_serial = w.workflow_serial
         LEFT JOIN workflow_detail_type wdt ON wd.workflow_detail_type_serial = wdt.workflow_detail_type_serial
+        LEFT JOIN contact on e.contact_serial= contact.contact_serial
         WHERE e.contact_serial IN (
             SELECT contact_serial FROM contact_to_user WHERE user_serial = ' . intval($employee_serial) . '
         )
@@ -226,16 +222,14 @@ $output = '<ResultInfo>
                <Selections>';
 
 while ($task_row = mysqli_fetch_assoc($result)) {
-    $task_date = !empty($task_row["event_date"]) ? date('m/d/Y', strtotime($task_row["event_date"])) : '';
-    $status = isset($task_row["status"]) ? intval($task_row["status"]) : 0;
-
+ 
     $output .= '
         <Task>
             <Name>' . htmlspecialchars($task_row["workflow_detail_name"]) . '</Name>
-            <Serial>' . intval($task_row["event_serial"]) . '</Serial>
+            <Serial>' . $task_row["event_serial"] . '</Serial>
             <Contact>' . htmlspecialchars($task_row["contact_name"]) . '</Contact>
-            <Date>' . $task_date . '</Date>
-            <Status>' . $status . '</Status>
+            <Date>' . $task_row["event_date"] . '</Date>
+            <Status>' . $task_row["status"] . '</Status>
         </Task>';
 }
 

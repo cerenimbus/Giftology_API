@@ -15,7 +15,7 @@
 // Created: 10/23/25
 // History: 10/23/25 initial version created
 //          11/11/25 updated author name, error messages and stub
-
+//          11/14/25 updated error messages and query
 //***************************************************************
 
 $debugflag = false;
@@ -68,7 +68,7 @@ if (empty($device_ID) || empty($authorization_code) || empty($key)) {
     $output = "<ResultInfo>
                    <ErrorNumber>101</ErrorNumber>
                    <Result>Fail</Result>
-                   <Message>Request not recognized</Message>
+                   <<Message>".get_text("rrservice", "_err101")."</Message>
                </ResultInfo>";
     send_output($output);
     exit;
@@ -114,7 +114,7 @@ if ($hash != $key) {
     $output = "<ResultInfo>
                    <ErrorNumber>102</ErrorNumber>
                    <Result>Fail</Result>
-                   <Message>Security Failure- incorrect hash key</Message>
+                   <<Message>".get_text("rrservice", "_err102")."</Message>
                </ResultInfo>";
     send_output($output);
     exit;
@@ -135,7 +135,7 @@ if ($current_mobile_version > $mobile_version) {
     $output = "<ResultInfo>
                    <ErrorNumber>106</ErrorNumber>
                    <Result>Fail</Result>
-                   <Message>Giftology version not current</Message>
+                   <<Message>".get_text("rrservice", "_err106")."</Message>
                </ResultInfo>";
     send_output($output);
     exit;
@@ -156,7 +156,7 @@ if (!$result || mysqli_error($mysqli_link)) {
     $output = "<ResultInfo>
                    <ErrorNumber>103</ErrorNumber>
                    <Result>Fail</Result>
-                   <Message>MySQL programming error</Message>
+                   <Message>".get_text("rrservice", "_err103")." ". $error ."</Message>
                </ResultInfo>";
     send_output($output);
     exit;
@@ -167,7 +167,7 @@ if (!$authorization_row) {
     $output = "<ResultInfo>
                    <ErrorNumber>105</ErrorNumber>
                    <Result>Fail</Result>
-                   <Message>Username and password does not match Employee records.</Message>
+                   <<Message>".get_text("rrservice", "_err105")."</Message>
                </ResultInfo>";
     send_output($output);
     exit;
@@ -196,7 +196,7 @@ if (!$result || mysqli_error($mysqli_link)) {
     $output = "<ResultInfo>
                    <ErrorNumber>103</ErrorNumber>
                    <Result>Fail</Result>
-                   <Message>MySQL programming error</Message>
+                   <Message>".get_text("rrservice", "_err103")." ". $error ."</Message>
                </ResultInfo>";
     send_output($output);
     exit;

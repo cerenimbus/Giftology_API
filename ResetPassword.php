@@ -95,7 +95,7 @@ if ($hash != $key) {
     $output = "<ResultInfo>
 <ErrorNumber>102</ErrorNumber>
 <Result>Fail</Result>
-<Message>Security Failure- incorrect hash key</Message>
+<<Message>".get_text("rrservice", "_err102")."</Message>
 </ResultInfo>";
     send_output($output);
     exit;
@@ -133,7 +133,7 @@ if ($rows == 1) {
     $output = "<ResultInfo>
 <ErrorNumber>105</ErrorNumber>
 <Result>Fail</Result>
-<Message>Username and password does not match Employee records.</Message>
+<<Message>".get_text("rrservice", "_err105")."</Message>
 </ResultInfo>";
     send_output($output);
     exit;

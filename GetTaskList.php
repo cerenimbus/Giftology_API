@@ -15,7 +15,6 @@
 // Created: 10/23/25
 // History: 10/23/25 initial version created
 //          11/11/25 updated author name, error messages and stub
-//          11/14/25 updated error messages and query
 //***************************************************************
 
 $debugflag = false;
@@ -68,7 +67,7 @@ if (empty($device_ID) || empty($authorization_code) || empty($key)) {
     $output = "<ResultInfo>
                    <ErrorNumber>101</ErrorNumber>
                    <Result>Fail</Result>
-                   <<Message>".get_text("rrservice", "_err101")."</Message>
+                   <Message>Request not recognized</Message>
                </ResultInfo>";
     send_output($output);
     exit;
@@ -114,7 +113,7 @@ if ($hash != $key) {
     $output = "<ResultInfo>
                    <ErrorNumber>102</ErrorNumber>
                    <Result>Fail</Result>
-                   <<Message>".get_text("rrservice", "_err102")."</Message>
+                   <Message>Security Failure- incorrect hash key</Message>
                </ResultInfo>";
     send_output($output);
     exit;
@@ -135,7 +134,7 @@ if ($current_mobile_version > $mobile_version) {
     $output = "<ResultInfo>
                    <ErrorNumber>106</ErrorNumber>
                    <Result>Fail</Result>
-                   <<Message>".get_text("rrservice", "_err106")."</Message>
+                   <Message>Giftology version not current</Message>
                </ResultInfo>";
     send_output($output);
     exit;
@@ -156,7 +155,7 @@ if (!$result || mysqli_error($mysqli_link)) {
     $output = "<ResultInfo>
                    <ErrorNumber>103</ErrorNumber>
                    <Result>Fail</Result>
-                   <Message>".get_text("rrservice", "_err103")." ". $error ."</Message>
+                   <Message>MySQL programming error</Message>
                </ResultInfo>";
     send_output($output);
     exit;
@@ -167,7 +166,7 @@ if (!$authorization_row) {
     $output = "<ResultInfo>
                    <ErrorNumber>105</ErrorNumber>
                    <Result>Fail</Result>
-                   <<Message>".get_text("rrservice", "_err105")."</Message>
+                   <Message>Username and password does not match Employee records.</Message>
                </ResultInfo>";
     send_output($output);
     exit;
@@ -177,12 +176,17 @@ $employee_serial = $authorization_row["employee_serial"];
 
 //-------------------------------------
 // Retrieve tasks for this employee
-$sql = 'SELECT *
+$sql = 'SELECT 
+            e.event_serial, 
+            wd.workflow_detail_name, 
+            w.workflow_name AS contact_name, 
+            wdt.workflow_detail_type_name, 
+            e.event_date, 
+            e.status
         FROM event e
         JOIN workflow_detail wd ON e.workflow_detail_serial = wd.workflow_detail_serial
         JOIN workflow w ON wd.workflow_serial = w.workflow_serial
         LEFT JOIN workflow_detail_type wdt ON wd.workflow_detail_type_serial = wdt.workflow_detail_type_serial
-        LEFT JOIN contact on e.contact_serial= contact.contact_serial
         WHERE e.contact_serial IN (
             SELECT contact_serial FROM contact_to_user WHERE user_serial = ' . intval($employee_serial) . '
         )
@@ -196,7 +200,7 @@ if (!$result || mysqli_error($mysqli_link)) {
     $output = "<ResultInfo>
                    <ErrorNumber>103</ErrorNumber>
                    <Result>Fail</Result>
-                   <Message>".get_text("rrservice", "_err103")." ". $error ."</Message>
+                   <Message>MySQL programming error</Message>
                </ResultInfo>";
     send_output($output);
     exit;
@@ -222,14 +226,16 @@ $output = '<ResultInfo>
                <Selections>';
 
 while ($task_row = mysqli_fetch_assoc($result)) {
- 
+    $task_date = !empty($task_row["event_date"]) ? date('m/d/Y', strtotime($task_row["event_date"])) : '';
+    $status = isset($task_row["status"]) ? intval($task_row["status"]) : 0;
+
     $output .= '
         <Task>
             <Name>' . htmlspecialchars($task_row["workflow_detail_name"]) . '</Name>
-            <Serial>' . $task_row["event_serial"] . '</Serial>
+            <Serial>' . intval($task_row["event_serial"]) . '</Serial>
             <Contact>' . htmlspecialchars($task_row["contact_name"]) . '</Contact>
-            <Date>' . $task_row["event_date"] . '</Date>
-            <Status>' . $task_row["status"] . '</Status>
+            <Date>' . $task_date . '</Date>
+            <Status>' . $status . '</Status>
         </Task>';
 }
 

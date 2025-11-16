@@ -18,7 +18,7 @@
     10/19/2025   KML - Start
     10/28/2025   KML - Added Update Task Logic
     11/14/2025   KML - Modified to align with Giftology Data Dictionary
-    11/25/2025   KML - Converted to Stub version for offline testing per Giftology RRService format.
+    11/15/2025   KML - Converted to Stub version for offline testing per Giftology RRService format.
  ******************************************************************/
 
 //-----------------------------------------------------
@@ -38,25 +38,9 @@ if ( file_exists('ccu_include/ccu_function.php') ) {
 }
 
 // Include output handler
-// this function is used to output the result and to store the result in the log
-debug( "get the send output php");
-// be sure we can find the function file for inclusion
-if ( file_exists( 'send_output.php')) {
-	require_once( 'send_output.php');
-} else {
-	// if we can't find it, terminate
-	if ( !file_exists('../ccu_include/send_output.php')){
-		echo "Cannot find required file ../ccu_include/send_output.php.  Contact programmer.";
-		exit;
-	}
-	require_once('../ccu_include/send_output.php');
-}
+require_once('send_output.php');
 
-
-//-----------------------------------------------------
-// STUB SECTION - for offline testing only
-//-----------------------------------------------------
-// RKG 10/20/25 THIS IS A SAMPLE STUB. The purpose is to always return a successful message, for testing
+// KML 10/20/25  The purpose is to always return a successful message, for testing
 // REMOVE AFTER DEVELOPMENT
 $output = "<ResultInfo>
 	<ErrorNumber>0</ErrorNumber>
@@ -66,11 +50,6 @@ $output = "<ResultInfo>
 </ResultInfo>";
 send_output($output);
 exit;
-
-//-----------------------------------------------------
-// From this point down, this code is for LIVE production mode
-// (stub above causes early exit for offline tests)
-//-----------------------------------------------------
 
 debug("UpdateTask called");
 
@@ -118,6 +97,18 @@ if ($hash != $key) {
 	exit;
 }
 
+//-----------------------------------------------------
+// Validate coordinates (if geolocation tracking enabled)
+//-----------------------------------------------------
+if ($latitude == 0 || $longitude == 0) {
+	$output = "<ResultInfo>
+	<ErrorNumber>205</ErrorNumber>
+	<Result>Fail</Result>
+	<Message>" . get_text("vcservice", "_err205") . "</Message>
+	</ResultInfo>";
+	send_output($output);
+	exit;
+}
 
 //-----------------------------------------------------
 // Validate Authorization Code -> Employee -> Subscriber
@@ -155,9 +146,17 @@ debug("Authorized employee_serial: $employee_serial, subscriber_serial: $subscri
 // Update Task Record
 //-----------------------------------------------------
 $update_sql = "UPDATE task SET 
+	task_name = '" . mysqli_real_escape_string($mysqli_link, $task_name) . "',
+	task_description = '" . mysqli_real_escape_string($mysqli_link, $task_description) . "',
+	due_date = '" . mysqli_real_escape_string($mysqli_link, $due_date) . "',
 	status = '" . mysqli_real_escape_string($mysqli_link, $task_status) . "',
+	assigned_to = '" . mysqli_real_escape_string($mysqli_link, $assigned_to) . "',
+	priority_level = '" . mysqli_real_escape_string($mysqli_link, $priority_level) . "',
+	notes = '" . mysqli_real_escape_string($mysqli_link, $notes) . "',
+	modified_by = '" . mysqli_real_escape_string($mysqli_link, $employee_serial) . "',
+	modified_date = NOW()
 	WHERE task_serial = '" . mysqli_real_escape_string($mysqli_link, $task_serial) . "'
-	;
+	AND subscriber_serial = '" . mysqli_real_escape_string($mysqli_link, $subscriber_serial) . "'";
 
 debug("Update SQL: " . $update_sql);
 $result = mysqli_query($mysqli_link, $update_sql);

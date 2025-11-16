@@ -67,19 +67,18 @@ $key = $_REQUEST["Key"] ?? "";
 $name = $_REQUEST["Name"] ?? "";
 $email = $_REQUEST["Email"] ?? "";
 $phone = $_REQUEST["Phone"] ?? "";
-$reply_requested = $_REQUEST["ReplyRequested"] ?? "";
-$opt_in = $_REQUEST["OptIn"] ?? "";
+$response = $_REQUEST["Response"] ?? "0";     // 1 or 0
+$update = $_REQUEST["Update"] ?? "0";         // 1 or 0
 $comment = $_REQUEST["Comment"] ?? "";
 $language = $_REQUEST["Language"] ?? "";
+$authorization_code = $_REQUEST["AC"] ?? "";
 
 //---------------------------------------------------------------
-// Stub Section (for testing without DB access)
+// STUB Section
 //---------------------------------------------------------------
-/*
-	RKG 10/20/25 THIS IS A SAMPLE STUB.
-	The purpose is to always return a successful message, for testing.
-	REMOVE AFTER DEVELOPMENT.
-*/
+// KML 10/20/25 THIS IS A SAMPLE STUB.
+// The purpose is to always return a successful message, for testing.
+
 $output = "<ResultInfo>
 	<ErrorNumber>0</ErrorNumber>
 	<Result>Success</Result>
@@ -97,19 +96,18 @@ set_language($language);
 //---------------------------------------------------------------
 // Security Hash Calculation
 //---------------------------------------------------------------
-$secret_string = "V0t3rCL!ck2013";
-$hash = sha1($deviceID . $requestDate . $secret_string);
+$expectedKey = sha1($deviceID . $requestDate . $authorization_code);
 
 // Debug information
 debug("DeviceID: $deviceID");
 debug("RequestDate: $requestDate");
 debug("Key: $key");
-debug("Hash: $hash");
+debug("ExpectedKey: $expectedKey");
 
 //---------------------------------------------------------------
 // Security Key Validation
 //---------------------------------------------------------------
-if ($hash != $key) {
+if ($expectedKey !== $key) {
 	debug("Hash key does not match");
 	$output = "<ResultInfo>
 <ErrorNumber>102</ErrorNumber>
@@ -121,17 +119,18 @@ if ($hash != $key) {
 }
 
 //---------------------------------------------------------------
-// Update feedback record (based on Giftology data dictionary)
+// Insert Feedback into Database
 //---------------------------------------------------------------
-$update_sql = "INSERT INTO feedback SET " .
-	"feedback_device_id='" . mysqli_real_escape_string($mysqli_link, $deviceID) . "', " .
-	"feedback_name='" . mysqli_real_escape_string($mysqli_link, $name) . "', " .
-	"feedback_email='" . mysqli_real_escape_string($mysqli_link, $email) . "', " .
-	"feedback_phone='" . mysqli_real_escape_string($mysqli_link, $phone) . "', " .
-	"feedback_source='Mobile', " .
-	"reply_requested_flag='" . mysqli_real_escape_string($mysqli_link, $reply_requested) . "', " .
-	"opt_in_flag='" . mysqli_real_escape_string($mysqli_link, $opt_in) . "', " .
-	"comment='" . mysqli_real_escape_string($mysqli_link, $comment) . "'";
+$update_sql = "INSERT INTO feedback SET 
+    feedback_device_id='" . mysqli_real_escape_string($mysqli_link, $deviceID) . "',
+    feedback_name='" . mysqli_real_escape_string($mysqli_link, $name) . "',
+    feedback_email='" . mysqli_real_escape_string($mysqli_link, $email) . "',
+    feedback_phone='" . mysqli_real_escape_string($mysqli_link, $phone) . "',
+    feedback_source='Mobile',
+    reply_requested_flag='" . mysqli_real_escape_string($mysqli_link, $response) . "',
+    opt_in_flag='" . mysqli_real_escape_string($mysqli_link, $update) . "',
+    comment='" . mysqli_real_escape_string($mysqli_link, $comment) . "',
+    created=NOW()";
 
 debug("Update SQL: " . $update_sql);
 

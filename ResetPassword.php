@@ -15,6 +15,7 @@
 // Created: 10/29/25
 // History: 10/29/25 initial version created
 //          11/11/25 updated author name, error messages and stub
+//          11/14/25 updated error messages
 //***************************************************************
 
 $debugflag = false;
@@ -95,7 +96,7 @@ if ($hash != $key) {
     $output = "<ResultInfo>
 <ErrorNumber>102</ErrorNumber>
 <Result>Fail</Result>
-<Message>Security Failure- incorrect hash key</Message>
+<<Message>".get_text("rrservice", "_err102")."</Message>
 </ResultInfo>";
     send_output($output);
     exit;
@@ -133,7 +134,7 @@ if ($rows == 1) {
     $output = "<ResultInfo>
 <ErrorNumber>105</ErrorNumber>
 <Result>Fail</Result>
-<Message>Username and password does not match Employee records.</Message>
+<<Message>".get_text("rrservice", "_err105")."</Message>
 </ResultInfo>";
     send_output($output);
     exit;

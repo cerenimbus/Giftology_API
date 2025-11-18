@@ -16,6 +16,7 @@
     10/28/2025   KML - Stubs
     11/14/2025   KML - Modified logic to fetch Event Dates (DOV Dates) based on Giftology DD.
     11/15/2025   KML - Converted to Stub version for offline testing per Giftology 
+    11/18/2025   ALC - Updated arguments and stub
  ******************************************************************/
 
 //---------------------------------------------------------------
@@ -44,27 +45,46 @@ debug("GetDOVDateList called");
 //  GET PARAMETERS
 //---------------------------------------------------------------
 // Device information and request metadata
-$device_ID   = urldecode($_REQUEST["DeviceID"] ?? "");
-$requestDate = $_REQUEST["Date"] ?? "";
-$authorization_code = $_REQUEST["AC"] ?? "";
-$key = $_REQUEST["Key"] ?? "";
-$longitude = $_REQUEST["Longitude"] ?? 0;
-$latitude  = $_REQUEST["Latitude"] ?? 0;
+$device_ID          = urldecode($_REQUEST["DeviceID"] ?? ''); //-alphanumeric up to 60 characters which uniquely identifies the mobile device (iphone, ipad, etc)
+$requestDate        = $_REQUEST["Date"] ?? ''; //- date/time as a string � alphanumeric up to 20 [format:  MM/DD/YYYY HH:mm]
+$authorization_code = $_REQUEST["AC"] ?? '';// 40 character authorization code 
+$key                = $_REQUEST["Key"] ?? ''; // alphanumeric 40, SHA-1 hash of the device ID + date string (MM/DD/YYYY-HH:mm) + AuthorizationCode
+$language           = $_REQUEST["Language"] ?? 'EN'; // Standard Language code from mobile [e.g EN for English]
+$mobile_version     = $_REQUEST["MobileVersion"] ?? '1'; //hardcoded value in software
 
 //---------------------------------------------------------------
 //  STUB SECTION (Return static XML before any validation)
 //---------------------------------------------------------------
-/*
-    KML 11/26/25 THIS IS A SAMPLE STUB.
-    The purpose is to always return a successful message, for testing.
-    REMOVE AFTER DEVELOPMENT.
-*/
-$output = "<ResultInfo>
-	<ErrorNumber>0</ErrorNumber>
-	<Result>Success</Result>
-	<Message>Security code accepted</Message>
-	<Auth>this is a test authorization code for testing only</Auth>
-</ResultInfo>";
+
+// ALC 11/18/25 THIS IS A SAMPLE STUB. The purpose is to always return a successful message, for testing
+$output = '<ResultInfo>
+    <ErrorNumber>0</ErrorNumber>
+    <Result>Success</Result>
+    <Message>Stub DOV Date list (sample data)</Message>
+    <Selections>
+        <Harmless>
+            <Name>John Doe</Name>
+            <ContactSerial>101</ContactSerial>
+            <Date>11/18/2025</Date>
+        </Harmless>
+        <Harmless>
+            <Name>Emily Stone</Name>
+            <ContactSerial>102</ContactSerial>
+            <Date>11/18/2025</Date>
+        </Harmless>
+        <Greenlight>
+            <Name>Jane Smith</Name>
+            <ContactSerial>201</ContactSerial>
+            <Date>11/19/2025</Date>
+        </Greenlight>
+        <Clarity>
+            <Name>Mark Johnson</Name>
+            <ContactSerial>301</ContactSerial>
+            <Date>11/20/2025</Date>
+        </Clarity>
+    </Selections>
+</ResultInfo>';
+
 send_output($output);
 exit;
 
@@ -88,22 +108,9 @@ if ($hash != $key) {
     $output = "<ResultInfo>
 <ErrorNumber>102</ErrorNumber>
 <Result>Fail</Result>
-<Message>" . get_text("vcservice", "_err102b") . "</Message>
+<Message>" . get_text("rrservice", "_err102b") . "</Message>
 </ResultInfo>";
     $log_comment = "Hash:" . $hash . "  and Key:" . $key;
-    send_output($output);
-    exit;
-}
-
-//---------------------------------------------------------------
-//  GEO VALIDATION (ensure valid coordinates)
-//---------------------------------------------------------------
-if ($latitude == 0 || $longitude == 0) {
-    $output = "<ResultInfo>
-<ErrorNumber>205</ErrorNumber>
-<Result>Fail</Result>
-<Message>" . get_text("vcservice", "_err205") . "</Message>
-</ResultInfo>";
     send_output($output);
     exit;
 }
@@ -140,7 +147,7 @@ if (mysqli_error($mysqli_link)) {
     $output = "<ResultInfo>
 <ErrorNumber>103</ErrorNumber>
 <Result>Fail</Result>
-<Message>" . get_text("vcservice", "_err103a") . " " . $error . "</Message>
+<Message>" . get_text("rrservice", "_err103a") . " " . $error . "</Message>
 </ResultInfo>";
     send_output($output);
     exit;

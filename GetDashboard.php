@@ -3,7 +3,7 @@
 // 1175 N 910 E, Orem UT 84097
 // THIS IS NOT OPEN SOURCE.  DO NOT USE WITHOUT PERMISSION
 /*
-GetDachboard
+GetDashboard
 Get all the information needed to display the dashboard
 */
 
@@ -99,15 +99,25 @@ $output = "<ResultInfo>
 			<ContactSerial>99999</ContactSerial>
 			<Amount>1</Amount>
 		</BestPartner>
+		<BestPartner>
+			<Name>Bill Clinton</Name>
+			<ContactSerial>99977</ContactSerial>
+			<Amount>1,000,000</Amount>
+		</BestPartner>
 		<Current>
 			<Name>Silly Sally</Name>
 			<ContactSerial>99999</ContactSerial>
-			<Phone>(810) 555-1212)</Phone>
+			<Phone>(810) 555-1212</Phone>
 		</Current>
         <Current>
 			<Name>Billy Barty</Name>
 			<ContactSerial>999</ContactSerial>
-			<Phone>(810) 121-1212)</Phone>
+			<Phone>(810) 121-1212</Phone>
+		</Current>
+		<Current>
+			<Name>Sarah Barty</Name>
+			<ContactSerial>65999</ContactSerial>
+			<Phone>(810) 121-1212</Phone>
 		</Current>
 		<Recent>
 			<Name>Jack Sprat</Name>
@@ -141,6 +151,13 @@ $output = "<ResultInfo>
 			<ContactSerial>27</ContactSerial>
 			<TaskSerial>99997</TaskSerial>
 			<TaskName>Thank you note<TaskName>
+			<Date>11-20-2025</Date>
+		</Task>
+		<Task>
+			<Name>Saul Alinski</Name>
+			<ContactSerial>27</ContactSerial>
+			<TaskSerial>99997</TaskSerial>
+			<TaskName>Drop By<TaskName>
 			<Date>11-20-2025</Date>
 		</Task>
 		<DOV>

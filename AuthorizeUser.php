@@ -80,7 +80,7 @@ $software_version= urldecode($_REQUEST["SoftwareVersion"]);// alphanumeric, 10 c
 $mobile_version= urldecode($_REQUEST["MobileVersion"]);// alphanumeric, 10 characters
 $username       = urldecode($_REQUEST["UserName"]);		// alphanumeric, 10 characters
 $password       = urldecode($_REQUEST["Password"]);		// alphanumeric, 10 characters
-$key   			= $_REQUEST["Key"];						//  alphanumeric 40, SHA-1 hash of Mobile Device ID + date string + secret phrase
+$key   			= trim( $_REQUEST["Key"]);						//  alphanumeric 40, SHA-1 hash of Mobile Device ID + date string + secret phrase
 
 // GENIE 2014-05-15 : api localization
 $language= $_REQUEST["Language"];
@@ -128,24 +128,6 @@ $hash."<br>");
 }
 
 
-
-// the log comment help debug in the web log.
-$log_comment="Username ". $username;
-// STUBB change: echo xml to call send_output function
-$log_comment .=" Success";
-$output = "<ResultInfo>
-<ErrorNumber>0</ErrorNumber>
-<Result>Success</Result>
-<Message>A security code will be sent by text message.</Message>
-<Level>1</Level>
-<Comp>Cerenimbus</Comp>
-<Name>Kirby Glad</Name>
-</ResultInfo>";
-send_output($output);
-exit;
-
-
-
 // RKG 11/20/2015 make sure they have the currnet software version.  This is hard coded for now.
 // RKG 1022/25 updates crezcontrol to giftology
 //if ( $current_mobile_version > $crewzcontrol_version){
@@ -163,8 +145,8 @@ if ( $current_mobile_version > $mobile_version){
 
 //--------------------------------------------------
 // lookup the username and password
-$sql= 'select * from user join subscriber on subscriber.subscriber_serial = user.subscriber_serial where username="' .
-     $username. '" and password="' .$password. '"';
+$sql= 'select * from user join subscriber on subscriber.subscriber_serial = user.subscriber_serial where email="' .
+     $username. '" and password="' .$password. '" and status<>"Inactive" and user.deleted_flag=0';
 debug("check the code: " . $sql);
 
 // did we find the username and password
@@ -178,7 +160,7 @@ if ( mysqli_error($mysqli_link))  {
 debug("after the error check");
 $rows= mysqli_num_rows($result);
 debug("Rows found ". $rows);
-$employee_row = mysqli_fetch_assoc($result);
+$user_row = mysqli_fetch_assoc($result);
 
 if($rows==1) {
 	// we have found one matching record
@@ -193,9 +175,10 @@ if($rows==1) {
 		', employee_device_ID="'. $device_ID.'"'.
 		', device_type="'.	 $device_type.'"'.
 		', device_model="'. $device_model.'"'.
-		', crewzcontrol_version="'. $crewzcontrol_version.'"'.
+		', mobile_version="'. $mobile_version.'"'.
 		', device_version="'. $device_version.'"'.
-		', operating_system="'.$software_version.'" where employee_serial="' . $employee_row["employee_serial"].'"';
+		', operating_system="'.$software_version.
+		'" where user_serial="' . $user_row["user_serial"].'"';
 
 	debug("save the code: " . $sql);
 
@@ -223,8 +206,8 @@ if($rows==1) {
 $setting_array = get_setting_list("system");
 $from_email = 	$setting_array["email_sender_from"] ."@". $setting_array["email_domain"];
 $from_name=     $setting_array["email_from_name"];
-$to_name=      $employee_row["first_name"] ." ".$employee_row["first_name"];
-$to_email=     $employee_row["employee_email"];
+$to_name=      $user_row["first_name"] ." ".$user_row["first_name"];
+$to_email=     $user_row["employee_email"];
 $subject=       "login attempt";
 $email_body=    "The user ". $username. " has tried logging in with password ". $password. " Use Security code: ".$security_code ;
 $attachement=   null;
@@ -249,8 +232,8 @@ debug("264 reply to email: ". $reply_to_email);
 // RKG 4/8/25 stop the emails and send sms insteaed
 //$result =send_email($from_email, $to_email, $subject, $email_body, $attachment, null,null, null, $from_name, $to_name, $message_serial,  $reply_to_email, $api_key, $email_service_name );
 
-$message =    "Your CrewzControl Security Code: ".$security_code ;
-$result = sendSMS($employee_row["employee_mobile"], $message);
+$message =    "Your Giftology Security Code: ".$security_code ;
+$result = sendSMS($user_row["employee_mobile"], $message);
 debug("271 SMS result");
 
 $attachement=   null;
@@ -267,16 +250,13 @@ debug("Result status code: ");
 //}
 
 // RKG 10/14/24 ----------------------------------------
-// STUB FOR TESTING ONLY
-// GENIE 04/22/14 - change: echo xml to call send_output function
 $log_comment .=" Success";
 $output = "<ResultInfo>
 <ErrorNumber>0</ErrorNumber>
 <Result>Success</Result>
 <Message>A security code will be sent by text message.</Message>
-<Level>1</Level>
-<Comp>Cerenimbus</Comp>
-<Name>Kirby Glad</Name>
+<Comp>" . $user_row["company_name"]. "</Comp>
+<Name>" . $to_name. "</Name>
 </ResultInfo>";
 send_output($output);
 exit;

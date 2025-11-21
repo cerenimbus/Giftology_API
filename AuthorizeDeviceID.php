@@ -67,17 +67,6 @@ $test = str_replace(chr(34), "'", $text);
 $log_sql= 'insert web_log SET method="AuthorizeDeviceID", text="'. $text. '", created="' . date("Y-m-d H:i:s") .'"';
 debug("Web log:" .$log_sql);
 
-// RKG 10/20/25 THIS IS A SAMPLE STUB. The purpose is to always return a successful message, for testing
-// REMOVE AFTER DEVELOPMENT
-$output = "<ResultInfo>
-	<ErrorNumber>0</ErrorNumber>
-	<Result>Success</Result>
-	<Message>Security code accepted</Message>
-	<Auth>this is a test authorization code for testing only</Auth>
-</ResultInfo>";
-send_output($output);
-exit;
-
 
 // FOR TESTING ONLY  write the values back out so we can see them
 debug( "input varialbles <br>".
@@ -106,38 +95,9 @@ $hash."<br>");
 }
 
 
-// RKG 11/20/2015 make sure they have the currnet software version.  This is hard coded for now.
-$crewzcontrol_version = $_REQUEST["CrewzControlVersion"];
-$current_crewzcontrol_version = get_setting("system","current_crewzcontrol_version");
-debug("current_crewzcontrol_version = " . $current_crewzcontrol_version );
-if ( $current_crewzcontrol_version > $crewzcontrol_version){
-	$output = "<ResultInfo>
-<ErrorNumber>106</ErrorNumber>
-<Result>Fail</Result>
-<Message>".get_text("vcservice", "_err106")."</Message>
-</ResultInfo>";
-	send_output($output);
-	exit;
-}
-
-//RKG 6/15/25 there is a delay in getting the longitude and lattitude so we will not collect it at this time
-/*
-// RKG  1/1/14check for longitude and latitide <> 0 if geocode level requires it
-// Rkg if error, write out API response.
-	if( $latitude==0 or $longitude == 0){
-		// GENIE 04/22/14 - change: echo xml to call send_output function
-		$output = "<ResultInfo>
-<ErrorNumber>205</ErrorNumber>
-<Result>Fail</Result>
-<Message>".get_text("vcservice", "_err205")."</Message>
-</ResultInfo>";
-	send_output($output);
-	exit;
-	}
-*/
 	// RKG 11/6/24  Get the user serial - and verify security
 // RKG 11/6/24 - Get the emmployee based on the authorization code
-$sql= 'select * from user where deleted_flag=0 AND user_device_ID="' . $device_ID.'"' ;
+$sql= 'select * from user where deleted_flag=0 AND employee_device_ID="' . $device_ID.'"' ;
 debug("get the user: " . $sql);
 
 // Execute the insert and check for success
@@ -157,7 +117,7 @@ debug("user serial: ".  $user_serial);
 debug("Security Code: ". $security_code);
 
 //RKG 11/12/24  make a back door for apple testers. Return unauthorized if not match
-if (($row_count>0) OR ( $user_row["user_username"]=="kirbyglad" AND $security_code="999999") OR ( $user_row["security_code"]==$security_code)){
+if (($row_count>0) OR ( $user_row["email"]=="kirbystuff1@comcast.net" AND $security_code="999999") OR ( $user_row["security_code"]==$security_code)){
 	// the code is good - continue
 } else {
 			$output = "<ResultInfo>
@@ -174,56 +134,56 @@ if (($row_count>0) OR ( $user_row["user_username"]=="kirbyglad" AND $security_co
 // First make a GUID.  GenerateGUID is a function located above that chuncks up a random number.  URLENCODE is then used to remove any characters that could cause problems
 // in being sent over the internet.  That could expand some of the characters and make the thing too long, so we have to shop it off
 $loop_flag= true;
-	while($loop_flag ) {
-		$authorization_code = substr(urlencode(generateGUID()), 0, 48);
-		debug("line 151 code: ".$authorization_code );
-		// Now check to see if this GUID is already in use in the authorization_code file
+while($loop_flag ) {
+	$authorization_code = substr(urlencode(generateGUID()), 0, 48);
+	debug("line 151 code: ".$authorization_code );
+	// Now check to see if this GUID is already in use in the authorization_code file
 
-		$sql= 'select * from authorization_code where authorization_code.authorization_code="' . $authorization_code. '"';
-		debug("check the code: " . $sql);
+	$sql= 'select * from authorization_code where authorization_code.authorization_code="' . $authorization_code. '"';
+	debug("check the code: " . $sql);
+
+	// Execute the insert and check for success
+	$result=mysqli_query($mysqli_link,$sql);
+	if ( mysqli_error($mysqli_link)) {
+		debug("line q144 sql error ". mysqli_error($mysqli_link));
+		debug("exit 146");
+		exit;
+	}
+	$rows= mysqli_num_rows($result);
+	if($rows==0){
+
+		// Rkg 11/12/24  mark all the other cods for this person as deleted
+		$sql= 'update authorization_code set deleted_flag=1 where user_serial="'. $user_serial. '"';
+		debug("save the code: " . $sql);
 
 		// Execute the insert and check for success
 		$result=mysqli_query($mysqli_link,$sql);
-		if ( mysqli_error($mysqli_link)) {
-			debug("line q144 sql error ". mysqli_error($mysqli_link));
-			debug("exit 146");
+		if ( mysqli_error($mysqli_link) ) {
+			debug("line 155 sql error ".$sql."   ". mysqli_error($mysqli_link));
+			debug("exit 157");
 			exit;
 		}
-		$rows= mysqli_num_rows($result);
-		if($rows==0){
 
-			// Rkg 11/12/24  mark all the other cods for this person as deleted
-			$sql= 'update authorization_code set deleted_flag=1 where user_serial="'. $user_serial. '"';
-			debug("save the code: " . $sql);
+		$sql= 'insert authorization_code set authorization_code.authorization_code="' . $authorization_code. '", user_serial="'. $user_serial. '"';
+		debug("save the code: " . $sql);
 
-			// Execute the insert and check for success
-			$result=mysqli_query($mysqli_link,$sql);
-			if ( mysqli_error($mysqli_link) ) {
-				debug("line 155 sql error ".$sql."   ". mysqli_error($mysqli_link));
-				debug("exit 157");
-				exit;
-			}
+		// Execute the insert and check for success
+		$result=mysqli_query($mysqli_link,$sql);
+		if ( mysqli_error($mysqli_link) ) {
+			debug("line 155 sql error ".$sql."   ". mysqli_error($mysqli_link));
+			debug("exit 157");
+			exit;
+		}
 
-			$sql= 'insert authorization_code set authorization_code.authorization_code="' . $authorization_code. '", user_serial="'. $user_serial. '"';
-			debug("save the code: " . $sql);
+		// stop looing
+		$loop_flag= false;
 
-			// Execute the insert and check for success
-			$result=mysqli_query($mysqli_link,$sql);
-			if ( mysqli_error($mysqli_link) ) {
-				debug("line 155 sql error ".$sql."   ". mysqli_error($mysqli_link));
-				debug("exit 157");
-				exit;
-			}
+	} // otherwise keep making a new one because the code was found
 
-			// stop looing
-			$loop_flag= false;
+	//if the code is not foundk, save the code, and stop the loop
 
-		} // otherwise keep making a new one because the code was found
-
-		//if the code is not foundk, save the code, and stop the loop
-
-	}
-	debug('out of the authoriztion code loop');
+}
+debug('out of the authoriztion code loop');
 //-------------------------------------
 // RKG 110/13/24 The user has no authorization code as of yet.  It will be assigned after the SMS code is verified
 // Get the authorization record
@@ -243,9 +203,7 @@ if ( mysqli_error($mysqli_link) ) {
 }
 
 
-// RKG 10/14/24 ----------------------------------------
-// STUB FOR TESTING ONLY
-// GENIE 04/22/14 - change: echo xml to call send_output function
+// RKG 11/19/25 ----------------------------------------
 $output = "<ResultInfo>
 	<ErrorNumber>0</ErrorNumber>
 	<Result>Success</Result>

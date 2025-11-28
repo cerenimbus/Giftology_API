@@ -18,6 +18,7 @@
     11/15/2025   KML - Converted to Stub version for offline testing per Giftology 
     11/18/2025   ALC - Updated arguments and stub
     11/21/2025   KML - Added dovChartData & revenueChartData fields for dashboard graphs
+    11/28/2025   KML - Reviewed and cleaned up comments. change from rrservice to vcservice.
  ******************************************************************/
 
 //---------------------------------------------------------------
@@ -126,7 +127,7 @@ if ($hash != $key) {
     $output = "<ResultInfo>
 <ErrorNumber>102</ErrorNumber>
 <Result>Fail</Result>
-<Message>" . get_text("rrservice", "_err102b") . "</Message>
+<Message>" . get_text("vcservice", "_err102b") . "</Message>
 </ResultInfo>";
     send_output($output);
     exit;
@@ -165,7 +166,7 @@ if (mysqli_error($mysqli_link)) {
     $output = "<ResultInfo>
 <ErrorNumber>103</ErrorNumber>
 <Result>Fail</Result>
-<Message>" . get_text("rrservice", "_err103a") . " " . $error . "</Message>
+<Message>" . get_text("vcservice", "_err103a") . " " . $error . "</Message>
 </ResultInfo>";
     send_output($output);
     exit;

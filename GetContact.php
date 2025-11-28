@@ -4,13 +4,13 @@
  ALL RIGHTS RESERVED. Proprietary and confidential
 
  Description:
-      GetContact (Giftology RRService)
+      GetContact (Giftology vcservice)
       Retrieves a list of contacts (formerly employees) for a user based on the authorization code.
       This STUB version returns static test XML data for all required tags.
       The stub block executes before hash validation for testing convenience.
 
  Called by:
-      Giftology Mobile App / RRService
+      Giftology Mobile App / vcservice
 
  Author: James Embudo
  Date:   11/28/25
@@ -49,7 +49,7 @@ if (!function_exists('send_output')) {
     exit;
 }
 
-debug("RRService GetContact");
+debug("VCservice GetContact");
 
 //---------------------------------------------------------------
 //  Retrieve and validate input parameters
@@ -109,6 +109,7 @@ $hash = sha1($device_ID . $requestDate . $authorization_code);
 
 // Log the request
 $request_text = var_export($_REQUEST, true);
+$request_text = mysqli_real_escape_string($mysqli_link, $request_text);
 $request_text = mysqli_real_escape_string($mysqli_link, $request_text);
 $log_sql = 'INSERT INTO web_log SET 
     method="GetContact", 

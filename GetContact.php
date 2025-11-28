@@ -101,7 +101,6 @@ $escaped_output = str_replace('"', '&quot;', $output);
 send_output($escaped_output);
 exit;
 
-exit;
 
 //===============================================================
 //  LIVE IMPLEMENTATION LOGIC (Executes if stub above is removed)
@@ -236,5 +235,4 @@ $escaped_output = str_replace('"', '&quot;', $output);
 send_output($escaped_output);
 exit;
 
-exit;
 ?>

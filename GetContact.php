@@ -1,32 +1,32 @@
 <?php
 /*****************************************************************
  Copyright Cerenimbus Inc
- ALL RIGHTS RESERVED.  Proprietary and confidential
+ ALL RIGHTS RESERVED. Proprietary and confidential
 
  Description:
-     GetContact (Giftology RRService)
-     Retrieves a list of contacts for a user based on the authorization code.
-     This STUB version returns static test XML data for all required tags.
-     The stub block executes before hash validation for testing convenience.
+      GetContact (Giftology RRService)
+      Retrieves a list of contacts (formerly employees) for a user based on the authorization code.
+      This STUB version returns static test XML data for all required tags.
+      The stub block executes before hash validation for testing convenience.
 
  Called by:
-     Giftology Mobile App / RRService
+      Giftology Mobile App / RRService
 
  Author: James Embudo
- Date:   11/12/25
+ Date:   11/28/25
  History:
-     11/12/25 JE - Created new Giftology GetContact API (converted from CrewzControl)
-     11/12/25 JE - Updated argument names and comments per Giftology API spec.
+      11/28/25 JE - Revise legacy GetEmployeeList to Giftology GetContact spec.
+      11/28/25 JE - Implemented Stub mode and cleaned up SQL logic for live implementation.
  ******************************************************************/
 
 $debugflag = false;
 
-// RKG 10/20/25 allow the debugflag to be switched on in the GET method call
+// Allow debugflag via request
 if (isset($_REQUEST["debugflag"])) {
     $debugflag = true;
 }
 
-// This stops JavaScript from being written because this is a microservice API
+// Suppress JavaScript (Microservice API)
 $suppress_javascript = true;
 
 //---------------------------------------------------------------
@@ -42,7 +42,7 @@ if (file_exists('ccu_include/ccu_function.php')) {
     require_once('../ccu_include/ccu_function.php');
 }
 
-// JE 11/12/25 include send_output.php and validate it exists correctly
+// Validate send_output exists
 require_once('send_output.php');
 if (!function_exists('send_output')) {
     echo "send_output.php is missing or invalid.";
@@ -52,29 +52,22 @@ if (!function_exists('send_output')) {
 debug("RRService GetContact");
 
 //---------------------------------------------------------------
-//  Retrieve and validate input parameters per Giftology specification
+//  Retrieve and validate input parameters
 //---------------------------------------------------------------
-$device_ID          = urldecode($_REQUEST["DeviceID"]);// Alphanumeric ≤60, uniquely identifies mobile device
-$requestDate        = $_REQUEST["Date"];                       // Alphanumeric ≤20 (MM/DD/YYYY-HH:mm)
-$authorization_code = $_REQUEST["AC"];                         // 40-char authorization code
-$key                = $_REQUEST["Key"];                        // 40-char SHA1(DeviceID + Date + AC)
-$language           = $_REQUEST["Language"];                   // Standard language code (e.g., EN)
-$mobile_version     = $_REQUEST["MobileVersion"];               // Hard-coded numeric version in mobile app
+$device_ID          = urldecode($_REQUEST["DeviceID"]); // Unique Device ID
+$requestDate        = $_REQUEST["Date"];                // MM/DD/YYYY-HH:mm
+$authorization_code = $_REQUEST["AC"];                  // Authorization Code
+$key                = $_REQUEST["Key"];                 // SHA1 Hash
+$language           = $_REQUEST["Language"];            // Language Code
+$mobile_version     = $_REQUEST["MobileVersion"];       // App Version
 
-// JE 11/12/25 Removed longitude/latitude – Giftology does not use location
-// $longitude = $_REQUEST["Longitude"];
-// $latitude  = $_REQUEST["Latitude"];
-
-// Optional input validation (commented out for stub testing)
-// if (strlen($authorization_code) != 40 or strlen($key) != 40) {
-//     debug("Invalid AC or Key length");
-// }
+// Legacy parameters removed per Giftology spec:
+// $longitude, $latitude, $crewzcontrol_version
 
 //---------------------------------------------------------------
-//  STUB MODE — return static XML test data before hash validation
+//  STUB MODE — Return static XML test data
 //---------------------------------------------------------------
-// JE 11/12/25 The stub executes prior to real validation to allow mobile testing
-// even if backend systems or hash validation are not yet active.
+// This block allows mobile testing before backend integration is complete.
 $output = '<ResultInfo>
 <ErrorNumber>0</ErrorNumber>
 <Result>Success</Result>
@@ -104,32 +97,137 @@ $output = '<ResultInfo>
 </Contacts>
 </ResultInfo>';
 
-// JE 11/12/25 immediately return stub data for testing without validation
 send_output($output);
 exit;
 
-//---------------------------------------------------------------
-//  (Below code remains for live version once stub is removed)
-//---------------------------------------------------------------
+//===============================================================
+//  LIVE IMPLEMENTATION LOGIC (Executes if stub above is removed)
+//===============================================================
 
-// Compute hash for security validation
+// 1. Calculate and Verify Hash
 $hash = sha1($device_ID . $requestDate . $authorization_code);
 
-debug("Device ID: $device_ID");
-debug("Authorization Code: $authorization_code");
-debug("Date: $requestDate");
-debug("Key: $key");
-debug("Hash: $hash");
-
-//---------------------------------------------------------------
-//  Log this API call to the web_log for audit
-//---------------------------------------------------------------
+// Log the request
 $request_text = var_export($_REQUEST, true);
-$request_text = str_replace(chr(34), "'", $request_text);
-$log_sql = 'insert web_log SET method="GetContact", text="' . $request_text . '", created="' . date("Y-m-d H:i:s") . '"';
+$request_text = mysqli_real_escape_string($mysqli_link, $request_text);
+$log_sql = 'INSERT INTO web_log SET 
+    method="GetContact", 
+    text="' . $request_text . '", 
+    created="' . date("Y-m-d H:i:s") . '"';
 debug("Web log: " . $log_sql);
+// mysqli_query($mysqli_link, $log_sql); // Uncomment to enable logging to DB
 
-//---------------------------------------------------------------
-//  (Rest of live validation logic will go here after stub phase)
-//---------------------------------------------------------------
+debug("Calculated Hash: $hash | Received Key: $key");
+
+if ($hash != $key) {
+    $output = "<ResultInfo>
+        <ErrorNumber>102</ErrorNumber>
+        <Result>Fail</Result>
+        <Message>" . get_text("vcservice", "_err102b") . "</Message>
+    </ResultInfo>";
+    $log_comment = "Hash Error: " . $hash . " != " . $key;
+    send_output($output);
+    exit;
+}
+
+// 2. Check Software Version
+$current_mobile_version = get_setting("system", "current_giftology_version"); // Updated setting name
+if ($current_mobile_version > $mobile_version) {
+    $output = "<ResultInfo>
+        <ErrorNumber>106</ErrorNumber>
+        <Result>Fail</Result>
+        <Message>" . get_text("vcservice", "_err106") . "</Message>
+    </ResultInfo>";
+    send_output($output);
+    exit;
+}
+
+// 3. Validate Authorization Code & Get Subscriber
+// This checks who is LOGGED IN (still usually in 'employee' table), to find their Subscriber ID
+$sql = 'select * from authorization_code 
+        join employee on authorization_code.employee_serial = employee.employee_serial 
+        where employee.deleted_flag=0 
+        and authorization_code.authorization_code="' . $authorization_code . '"';
+
+$result = mysqli_query($mysqli_link, $sql);
+
+if (mysqli_error($mysqli_link)) {
+    debug("Auth Code SQL Error: " . mysqli_error($mysqli_link));
+    exit;
+}
+
+$authorization_row = mysqli_fetch_assoc($result);
+
+if (!$authorization_row) {
+    // Handle invalid auth code
+    $output = "<ResultInfo>
+        <ErrorNumber>103</ErrorNumber>
+        <Result>Fail</Result>
+        <Message>Invalid Authorization Code</Message>
+    </ResultInfo>";
+    send_output($output);
+    exit;
+}
+
+$subscriber_serial = $authorization_row["subscriber_serial"];
+debug("Subscriber Serial: " . $subscriber_serial);
+
+// 4. Retrieve Contacts
+// REVISED: Query the 'contact' table based on the new schema
+$sql = 'SELECT * FROM contact 
+        WHERE subscriber_serial ="' . $subscriber_serial . '" 
+        AND deleted_flag = 0 
+        ORDER BY first_name';
+
+$result = mysqli_query($mysqli_link, $sql);
+
+if (mysqli_error($mysqli_link)) {
+    $error = mysqli_error($mysqli_link);
+    $output = "<ResultInfo>
+        <ErrorNumber>103</ErrorNumber>
+        <Result>Fail</Result>
+        <Message>" . get_text("vcservice", "_err103a") . " " . $error . "</Message>
+    </ResultInfo>";
+    send_output($output);
+    exit;
+}
+
+// 5. Build XML Output
+$output = '<ResultInfo>
+<ErrorNumber>0</ErrorNumber>
+<Result>Success</Result>
+<Message>Contact retrieved successfully</Message>
+<Contacts>';
+
+while ($row = mysqli_fetch_assoc($result)) {
+    
+    // REVISED: Simplified name logic (No preferred_name in schema)
+    $contact_name = trim($row["first_name"] . " " . $row["last_name"]);
+
+    // REVISED: Mapping fields based on the 'contact' table image
+    $serial  = $row["contact_serial"];    // Primary Key
+    $phone   = $row["mobile_phone"];      // Column: mobile_phone
+    $email   = $row["email"];             // Column: email
+    $company = $row["company_name"];      // Column: company_name
+
+    // Handle null values to avoid XML errors
+    if(is_null($phone)) { $phone = ""; }
+    if(is_null($email)) { $email = ""; }
+    if(is_null($company)) { $company = ""; }
+
+    $output .= '
+    <Contact>
+        <Name>' . $contact_name . '</Name>
+        <Serial>' . $serial . '</Serial>
+        <Phone>' . $phone . '</Phone>
+        <Email>' . $email . '</Email>
+        <Company>' . $company . '</Company>
+    </Contact>';
+}
+
+$output .= '</Contacts>
+</ResultInfo>';
+
+send_output($output);
+exit;
 ?>

@@ -4,34 +4,33 @@
  ALL RIGHTS RESERVED. Proprietary and confidential
 
  Description:
-     GetContactList (Giftology RRService)
-     Stub version for testing.
-     Simulates retrieval of a user’s contact list without database access.
-     Returns fixed XML test data for all expected tags.
+      GetContactList (Giftology RRService)
+      Retrieves a list of contacts for a user based on the authorization code.
+      This STUB version returns static test XML data for all required tags.
+      The stub block executes before hash validation for testing convenience.
 
  Called by:
-     Giftology Mobile App / RRService
+      Giftology Mobile App / RRService
 
  Author: James Embudo
- Date:   11/12/25
+ Date:   11/28/25
  History:
-     11/12/25 JE - Created stub version for offline testing.
-     11/12/25 JE - Applied Cerenimbus checklist updates per Giftology API migration.
-     11/12/25 JE - Updated parameter set and validation per Giftology spec.
+      11/28/25 JE - Created stub version for offline testing.
+      11/28/25 JE - Applied table schema fixes (contact table, mobile_phone) to live logic.
  ******************************************************************/
 
 $debugflag = false;
 
-// RKG 10/20/25 allow the debugflag to be switched on in the GET method call
+// Allow debugflag via request
 if (isset($_REQUEST["debugflag"])) {
     $debugflag = true;
 }
 
-// This stops JavaScript output since this is an API microservice
+// Suppress JavaScript (Microservice API)
 $suppress_javascript = true;
 
 //---------------------------------------------------------------
-//  Include required support files
+//  Include required files with error checking
 //---------------------------------------------------------------
 if (file_exists('ccu_include/ccu_function.php')) {
     require_once('ccu_include/ccu_function.php');
@@ -43,86 +42,184 @@ if (file_exists('ccu_include/ccu_function.php')) {
     require_once('../ccu_include/ccu_function.php');
 }
 
-//---------------------------------------------------------------
-//  Include send_output.php with validation (per AuthorizeEmployee.php)
-//---------------------------------------------------------------
-if (file_exists('send_output.php')) {
-    require_once('send_output.php');
-    if (!function_exists('send_output')) {
-        echo "send_output.php is missing or invalid.";
-        exit;
-    }
-} else {
-    echo "Required file send_output.php not found. Contact programmer.";
+// Validate send_output exists
+require_once('send_output.php');
+if (!function_exists('send_output')) {
+    echo "send_output.php is missing or invalid.";
     exit;
 }
 
-// JE 11/12/25 Log API start
-debug("RRService GetContactList (Stub) initialized");
+debug("RRService GetContactList");
 
 //---------------------------------------------------------------
-//  Retrieve and validate input parameters per Giftology spec
+//  Retrieve and validate input parameters
 //---------------------------------------------------------------
-// JE 11/12/25 Each parameter validated per API documentation
-$device_ID          = urldecode($_REQUEST["DeviceID"]);// Alphanumeric up to 60 chars, uniquely identifies the mobile device
-$requestDate        = $_REQUEST["Date"];                      // Alphanumeric up to 20 chars [MM/DD/YYYY-HH:mm]
-$authorization_code = $_REQUEST["AC"];                        // 40-char authorization code
-$key                = $_REQUEST["Key"];                       // 40-char SHA1(device_ID + date + AC)
-$language           = $_REQUEST["Language"];                  // Standard language code (e.g., EN)
-$mobile_version     = $_REQUEST["MobileVersion"];             // Hardcoded numeric version from mobile app
-
-// JE 11/12/25 Removed longitude/latitude — not used in Giftology RRService
-// $longitude = $_REQUEST["Longitude"];
-// $latitude  = $_REQUEST["Latitude"];
+$device_ID          = urldecode($_REQUEST["DeviceID"]); // Alphanumeric up to 60 chars
+$requestDate        = $_REQUEST["Date"];                // MM/DD/YYYY-HH:mm
+$authorization_code = $_REQUEST["AC"];                  // 40-char authorization code
+$key                = $_REQUEST["Key"];                 // SHA1 Hash
+$language           = $_REQUEST["Language"];            // Standard language code
+$mobile_version     = $_REQUEST["MobileVersion"];       // Numeric version
 
 //---------------------------------------------------------------
-//  STUB BLOCK – Executes before hash validation
+//  STUB MODE — Return static XML test data
 //---------------------------------------------------------------
-// JE 11/12/25 Stub Mode: Always returns static XML test data for integration testing.
-// This block executes BEFORE hash validation to simplify client testing.
-if (true) { // Always active in stub mode
-    debug("RRService GetContactList (Stub) executing before hash validation.");
+// This block allows mobile testing before backend integration is complete.
+$output = '<ResultInfo>
+<ErrorNumber>0</ErrorNumber>
+<Result>Success</Result>
+<Message>Contact list retrieved successfully</Message>
+<Contacts>
+    <Contact>
+        <Name>James E</Name>
+        <Serial>1001</Serial>
+        <Phone>+1 801-555-1001</Phone>
+        <Email>james.e@example.com</Email>
+        <Company>Acme Corp</Company>
+    </Contact>
+    <Contact>
+        <Name>Alfred C</Name>
+        <Serial>1002</Serial>
+        <Phone>+1 801-555-1002</Phone>
+        <Email>alfred.c@example.com</Email>
+        <Company>Bluewave Marketing</Company>
+    </Contact>
+    <Contact>
+        <Name>Janvel A</Name>
+        <Serial>1003</Serial>
+        <Phone>+1 801-555-1003</Phone>
+        <Email>janvel.a@example.com</Email>
+        <Company>NextGen Logistics</Company>
+    </Contact>
+</Contacts>
+</ResultInfo>';
 
-    $output = '<ResultInfo>
-    <ErrorNumber>0</ErrorNumber>
-    <Result>Success</Result>
-    <Message>Contact list found</Message>
-    <Contacts>
-        <Contact>
-            <Name>James E</Name>
-            <Serial>1001</Serial>
-        </Contact>
-        <Contact>
-            <Name>Alfred C</Name>
-            <Serial>1002</Serial>
-        </Contact>
-        <Contact>
-            <Name>Janvel A</Name>
-            <Serial>1003</Serial>
-        </Contact>
-    </Contacts>
-    </ResultInfo>';
+send_output($output);
+exit;
 
+//===============================================================
+//  LIVE IMPLEMENTATION LOGIC (Executes if stub above is removed)
+//===============================================================
+
+// 1. Calculate and Verify Hash
+$hash = sha1($device_ID . $requestDate . $authorization_code);
+
+// Log the request
+$request_text = var_export($_REQUEST, true);
+$request_text = str_replace(chr(34), "'", $request_text);
+$log_sql = 'insert web_log SET method="GetContactList", text="' . $request_text . '", created="' . date("Y-m-d H:i:s") . '"';
+debug("Web log: " . $log_sql);
+
+debug("Calculated Hash: $hash | Received Key: $key");
+
+if ($hash != $key) {
+    $output = "<ResultInfo>
+        <ErrorNumber>102</ErrorNumber>
+        <Result>Fail</Result>
+        <Message>" . get_text("vcservice", "_err102b") . "</Message>
+    </ResultInfo>";
+    $log_comment = "Hash Error: " . $hash . " != " . $key;
     send_output($output);
     exit;
 }
 
-//---------------------------------------------------------------
-//  Security Hash Validation (not executed in stub mode)
-//---------------------------------------------------------------
-$hash = sha1($device_ID . $requestDate . $authorization_code);
-debug("Hash validation placeholder (not executed in stub mode). Computed Hash: " . $hash);
+// 2. Check Software Version
+$current_mobile_version = get_setting("system", "current_giftology_version"); 
+if ($current_mobile_version > $mobile_version) {
+    $output = "<ResultInfo>
+        <ErrorNumber>106</ErrorNumber>
+        <Result>Fail</Result>
+        <Message>" . get_text("vcservice", "_err106") . "</Message>
+    </ResultInfo>";
+    send_output($output);
+    exit;
+}
 
-//---------------------------------------------------------------
-//  Version validation (stubbed success)
-//---------------------------------------------------------------
-debug("Stub Mode - Skipping version validation.");
+// 3. Validate Authorization Code & Get Subscriber
+// Logic: Find the employee associated with the Auth Code to determine the Subscriber (Company) ID
+$sql = 'select * from authorization_code 
+        join employee on authorization_code.employee_serial = employee.employee_serial 
+        where employee.deleted_flag=0 
+        and authorization_code.authorization_code="' . $authorization_code . '"';
 
-//---------------------------------------------------------------
-//  Log Request for Testing
-//---------------------------------------------------------------
-$request_text = var_export($_REQUEST, true);
-$request_text = str_replace(chr(34), "'", $request_text);
-$log_sql = 'insert web_log SET method="GetContactListStub", text="' . $request_text . '", created="' . date("Y-m-d H:i:s") . '"';
-debug("Web log (stub): " . $log_sql);
+$result = mysqli_query($mysqli_link, $sql);
+
+if (mysqli_error($mysqli_link)) {
+    debug("Auth Code SQL Error: " . mysqli_error($mysqli_link));
+    exit;
+}
+
+$authorization_row = mysqli_fetch_assoc($result);
+
+if (!$authorization_row) {
+    $output = "<ResultInfo>
+        <ErrorNumber>103</ErrorNumber>
+        <Result>Fail</Result>
+        <Message>Invalid Authorization Code</Message>
+    </ResultInfo>";
+    send_output($output);
+    exit;
+}
+
+$subscriber_serial = $authorization_row["subscriber_serial"];
+debug("Subscriber Serial: " . $subscriber_serial);
+
+// 4. Retrieve Contacts
+// REVISED: Query the 'contact' table based on schema (mobile_phone, deleted_flag, no preferred_name)
+$sql = 'SELECT * FROM contact 
+        WHERE subscriber_serial ="' . $subscriber_serial . '" 
+        AND deleted_flag = 0 
+        ORDER BY first_name';
+
+$result = mysqli_query($mysqli_link, $sql);
+
+if (mysqli_error($mysqli_link)) {
+    $error = mysqli_error($mysqli_link);
+    $output = "<ResultInfo>
+        <ErrorNumber>103</ErrorNumber>
+        <Result>Fail</Result>
+        <Message>" . get_text("vcservice", "_err103a") . " " . $error . "</Message>
+    </ResultInfo>";
+    send_output($output);
+    exit;
+}
+
+// 5. Build XML Output
+$output = '<ResultInfo>
+<ErrorNumber>0</ErrorNumber>
+<Result>Success</Result>
+<Message>Contact list retrieved successfully</Message>
+<Contacts>';
+
+while ($row = mysqli_fetch_assoc($result)) {
+    
+    // Combine First and Last Name (Schema has no Preferred Name)
+    $contact_name = trim($row["first_name"] . " " . $row["last_name"]);
+
+    // Map fields from 'contact' table
+    $serial  = $row["contact_serial"];    // Primary Key
+    $phone   = $row["mobile_phone"];      // Specific column name from schema
+    $email   = $row["email"];             
+    $company = $row["company_name"];      
+
+    // Handle nulls
+    if(is_null($phone)) { $phone = ""; }
+    if(is_null($email)) { $email = ""; }
+    if(is_null($company)) { $company = ""; }
+
+    $output .= '
+    <Contact>
+        <Name>' . $contact_name . '</Name>
+        <Serial>' . $serial . '</Serial>
+        <Phone>' . $phone . '</Phone>
+        <Email>' . $email . '</Email>
+        <Company>' . $company . '</Company>
+    </Contact>';
+}
+
+$output .= '</Contacts>
+</ResultInfo>';
+
+send_output($output);
+exit;
 ?>

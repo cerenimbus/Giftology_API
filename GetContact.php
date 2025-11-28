@@ -4,13 +4,13 @@
  ALL RIGHTS RESERVED. Proprietary and confidential
 
  Description:
-      GetContact (Giftology vcservice)
+      GetContact (Giftology RRService)
       Retrieves a list of contacts (formerly employees) for a user based on the authorization code.
       This STUB version returns static test XML data for all required tags.
       The stub block executes before hash validation for testing convenience.
 
  Called by:
-      Giftology Mobile App / vcservice
+      Giftology Mobile App / RRService
 
  Author: James Embudo
  Date:   11/28/25
@@ -32,6 +32,8 @@ $suppress_javascript = true;
 //---------------------------------------------------------------
 //  Include required files with error checking
 //---------------------------------------------------------------
+
+//comment for local testing
 if (file_exists('ccu_include/ccu_function.php')) {
     require_once('ccu_include/ccu_function.php');
 } else {
@@ -49,7 +51,17 @@ if (!function_exists('send_output')) {
     exit;
 }
 
-debug("VCservice GetContact");
+debug("RRService GetContact");
+
+    //uncomment for local testing
+// Dummy send_output function for local testing
+// function send_output($output) {
+//     header('Content-Type: application/xml');
+//     echo $output;
+//     exit; // ensure script stops after sending output
+// }
+
+
 
 //---------------------------------------------------------------
 //  Retrieve and validate input parameters
@@ -97,10 +109,8 @@ $output = '<ResultInfo>
 </Contacts>
 </ResultInfo>';
 
-$escaped_output = str_replace('"', '&quot;', $output);
-send_output($escaped_output);
+send_output($output);
 exit;
-
 
 //===============================================================
 //  LIVE IMPLEMENTATION LOGIC (Executes if stub above is removed)
@@ -231,8 +241,6 @@ while ($row = mysqli_fetch_assoc($result)) {
 $output .= '</Contacts>
 </ResultInfo>';
 
-$escaped_output = str_replace('"', '&quot;', $output);
-send_output($escaped_output);
+send_output($output);
 exit;
-
 ?>

@@ -4,13 +4,13 @@
  ALL RIGHTS RESERVED. Proprietary and confidential
 
  Description:
-      GetContactList (Giftology VCservice)
+      GetContactList (Giftology RRService)
       Retrieves a list of contacts for a user based on the authorization code.
       This STUB version returns static test XML data for all required tags.
       The stub block executes before hash validation for testing convenience.
 
  Called by:
-      Giftology Mobile App / VCservice
+      Giftology Mobile App / RRService
 
  Author: James Embudo
  Date:   11/28/25
@@ -49,7 +49,14 @@ if (!function_exists('send_output')) {
     exit;
 }
 
-debug("VCservice GetContactList");
+debug("RRService GetContactList");
+
+//uncomment for local testing
+// function send_output($output) {
+//     header('Content-Type: application/xml');
+//     echo $output;
+// }
+
 
 //---------------------------------------------------------------
 //  Retrieve and validate input parameters

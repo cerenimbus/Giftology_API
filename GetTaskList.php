@@ -69,7 +69,7 @@ if (empty($device_ID) || empty($authorization_code) || empty($key)) {
     $output = "<ResultInfo>
                    <ErrorNumber>101</ErrorNumber>
                    <Result>Fail</Result>
-                   <Message>".get_text("vcservice", "_err101")."</Message>
+                   <Message>".get_text("vcservice", "101")."</Message>
                </ResultInfo>";
     send_output($output);
     exit;
@@ -115,7 +115,7 @@ if ($hash != $key) {
     $output = "<ResultInfo>
                    <ErrorNumber>102</ErrorNumber>
                    <Result>Fail</Result>
-                   <Message>".get_text("vcservice", "_err102")."</Message>
+                   <Message>".get_text("vcservice", "102")."</Message>
                </ResultInfo>";
     send_output($output);
     exit;
@@ -137,7 +137,7 @@ if ($current_mobile_version > $mobile_version) {
     $output = "<ResultInfo>
                    <ErrorNumber>106</ErrorNumber>
                    <Result>Fail</Result>
-                   <Message>".get_text("vcservice", "_err106")."</Message>
+                   <Message>".get_text("vcservice", "106")."</Message>
                </ResultInfo>";
     send_output($output);
     exit;
@@ -159,7 +159,7 @@ if (!$result || mysqli_error($mysqli_link)) {
     $output = "<ResultInfo>
                    <ErrorNumber>103</ErrorNumber>
                    <Result>Fail</Result>
-                   <Message>".get_text("vcservice", "_err103")." ". $error ."</Message>
+                   <Message>".get_text("vcservice", "103")." ". $error ."</Message>
                </ResultInfo>";
     send_output($output);
     exit;
@@ -170,7 +170,7 @@ if (!$authorization_row) {
     $output = "<ResultInfo>
                    <ErrorNumber>105</ErrorNumber>
                    <Result>Fail</Result>
-                   <Message>".get_text("vcservice", "_err105")."</Message>
+                   <Message>".get_text("vcservice", "105")."</Message>
                </ResultInfo>";
     send_output($output);
     exit;
@@ -198,7 +198,7 @@ if (!$result || mysqli_error($mysqli_link)) {
     $output = "<ResultInfo>
                    <ErrorNumber>103</ErrorNumber>
                    <Result>Fail</Result>
-                   <Message>".get_text("vcservice", "_err103")." ". $error ."</Message>
+                   <Message>".get_text("vcservice", "103")." ". $error ."</Message>
                </ResultInfo>";
     send_output($output);
     exit;

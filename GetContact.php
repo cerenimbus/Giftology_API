@@ -97,7 +97,10 @@ $output = '<ResultInfo>
 </Contacts>
 </ResultInfo>';
 
-send_output($output);
+$escaped_output = str_replace('"', '&quot;', $output);
+send_output($escaped_output);
+exit;
+
 exit;
 
 //===============================================================
@@ -229,6 +232,9 @@ while ($row = mysqli_fetch_assoc($result)) {
 $output .= '</Contacts>
 </ResultInfo>';
 
-send_output($output);
+$escaped_output = str_replace('"', '&quot;', $output);
+send_output($escaped_output);
+exit;
+
 exit;
 ?>

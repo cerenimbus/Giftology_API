@@ -7,7 +7,7 @@
     UpdateFeedback.php
 
  Called by:
-    Giftology Mobile App / RRService
+    Giftology Mobile App / VCService
 
  Author: Karl Matthew Linao
  Date:   11/15/25
@@ -15,7 +15,7 @@
     10/19/2025   KML - Start
     10/28/2025   KML - Stubs
     11/14/2025   KML - Modified logic to update feedback based on Giftology DD.
-    11/15/2025   KML - Converted to Stub version for offline testing per Giftology RRService format.
+    11/15/2025   KML - Converted to Stub version for offline testing per Giftology VCService format.
  ******************************************************************/
 
 //---------------------------------------------------------------
@@ -157,4 +157,5 @@ $output = "<ResultInfo>
 </ResultInfo>";
 send_output($output);
 exit;
+
 ?>

@@ -7,13 +7,15 @@
     UpdateTask.php
 
  Called by:
-    Giftology Mobile App / RRService
+    Giftology Mobile App / VCService
 
  Author: Karl Matthew Linao
  Date:   11/28/2025
  History:
     11/28/2025   KML - Created based on UpdateFeedback stub and 
-                       modified for Giftology RRService Task Update spec.
+                       modified for Giftology VCService Task Update spec.
+    11/28/2025   KML - Reviewed and cleaned up comments. change from rrservice to vcservice.
+
  ******************************************************************/
 
 //---------------------------------------------------------------

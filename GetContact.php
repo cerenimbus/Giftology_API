@@ -1,244 +1,200 @@
 <?php
-/*****************************************************************
- Copyright Cerenimbus Inc
- ALL RIGHTS RESERVED. Proprietary and confidential
+//  Copyright Cerenimbus Inc
+//  ALL RIGHTS RESERVED. Proprietary and confidential
 
- Description:
-      GetContact (Giftology RRService)
-      Retrieves a list of contacts (formerly employees) for a user based on the authorization code.
-      This STUB version returns static test XML data for all required tags.
-      The stub block executes before hash validation for testing convenience.
+//  Description:
+//       GetContact (Giftology RRService)
+//       Retrieves a list of contacts (formerly employees) for a user based on the authorization code.
+//       This STUB version returns static test XML data for all required tags.
+//       The stub block executes before hash validation for testing convenience.
 
- Called by:
-      Giftology Mobile App / RRService
+//  Called by:
+//       Giftology Mobile App / RRService
 
- Author: James Embudo
- Date:   11/28/25
- History:
-      11/28/25 JE - Revise legacy GetEmployeeList to Giftology GetContact spec.
-      11/28/25 JE - Implemented Stub mode and cleaned up SQL logic for live implementation.
- ******************************************************************/
+//  Author: James Embudo
+//  Date:   11/28/25
+//  History:
+//       11/28/25 JE - Revise legacy GetEmployeeList to Giftology GetContact spec.
+//       11/28/25 JE - Implemented Stub mode and cleaned up SQL logic for live implementation.
+//       12/06/25 JE - Revise sql query to retrieve a single contact of the user.
 
-$debugflag = false;
+// ===============================================================
+    // CONFIGURATION SWITCH
+    // Set to TRUE for live server
+    // Set to False for local testing
+    // ===============================================================
+    $LIVE_MODE = false; 
+    // ===============================================================
 
-// Allow debugflag via request
-if (isset($_REQUEST["debugflag"])) {
-    $debugflag = true;
+    $debugflag = isset($_REQUEST["debugflag"]);
+    $suppress_javascript = true;
+
+    // -----------------------------------------------------------
+    // 1. INPUT HANDLING
+    // -----------------------------------------------------------
+    $device_ID          = urldecode($_REQUEST["DeviceID"] ?? "");
+    $requestDate        = $_REQUEST["Date"] ?? "";
+    $authorization_code = $_REQUEST["AC"] ?? "";
+    $key                = $_REQUEST["Key"] ?? "";
+    $language           = $_REQUEST["Language"] ?? "en";
+    $mobile_version     = $_REQUEST["MobileVersion"] ?? "1.0";
+    $target_contact_serial = $_REQUEST["ContactSerial"] ?? ""; 
+
+    // -----------------------------------------------------------
+    // 2. STUB MODE (Local Testing)
+    // -----------------------------------------------------------
+    if ($LIVE_MODE === false) {
+
+        if (!function_exists('send_output')) {
+            function send_output($output) {
+                if (strpos($output, '<?xml') === false) {
+                    $output = '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . $output;
+}
+header('Content-Type: application/xml');
+echo $output;
+exit;
+}
 }
 
-// Suppress JavaScript (Microservice API)
-$suppress_javascript = true;
-
-//---------------------------------------------------------------
-//  Include required files with error checking
-//---------------------------------------------------------------
-
-//comment for local testing
-if (file_exists('ccu_include/ccu_function.php')) {
-    require_once('ccu_include/ccu_function.php');
-} else {
-    if (!file_exists('../ccu_include/ccu_function.php')) {
-        echo "Cannot find required file ../ccu_include/ccu_function.php. Contact programmer.";
-        exit;
-    }
-    require_once('../ccu_include/ccu_function.php');
-}
-
-// Validate send_output exists
-require_once('send_output.php');
-if (!function_exists('send_output')) {
-    echo "send_output.php is missing or invalid.";
-    exit;
-}
-
-debug("RRService GetContact");
-
-    //uncomment for local testing
-// Dummy send_output function for local testing
-// function send_output($output) {
-//     header('Content-Type: application/xml');
-//     echo $output;
-//     exit; // ensure script stops after sending output
-// }
-
-
-
-//---------------------------------------------------------------
-//  Retrieve and validate input parameters
-//---------------------------------------------------------------
-$device_ID          = urldecode($_REQUEST["DeviceID"]); // Unique Device ID
-$requestDate        = $_REQUEST["Date"];                // MM/DD/YYYY-HH:mm
-$authorization_code = $_REQUEST["AC"];                  // Authorization Code
-$key                = $_REQUEST["Key"];                 // SHA1 Hash
-$language           = $_REQUEST["Language"];            // Language Code
-$mobile_version     = $_REQUEST["MobileVersion"];       // App Version
-
-// Legacy parameters removed per Giftology spec:
-// $longitude, $latitude, $crewzcontrol_version
-
-//---------------------------------------------------------------
-//  STUB MODE — Return static XML test data
-//---------------------------------------------------------------
-// This block allows mobile testing before backend integration is complete.
+// STUB: Return only ONE contact to simulate the specific query
 $output = '<ResultInfo>
-<ErrorNumber>0</ErrorNumber>
-<Result>Success</Result>
-<Message>Contact retrieved successfully</Message>
-<Contacts>
+  <ErrorNumber>0</ErrorNumber>
+  <Result>Success</Result>
+  <Message>Single Contact retrieved (STUB)</Message>
+  <Contacts>
     <Contact>
-        <Name>James E</Name>
-        <Serial>1001</Serial>
-        <Phone>+1 801-555-1001</Phone>
-        <Email>james.e@example.com</Email>
-        <Company>Acme Corp</Company>
+      <Name>James E</Name>
+      <Serial>' . ($target_contact_serial ? $target_contact_serial : "1001") . '</Serial>
+      <Phone>+1 801-555-1001</Phone>
+      <Email>james.e@example.com</Email>
+      <Company>Acme Corp</Company>
     </Contact>
-    <Contact>
-        <Name>Alfred C</Name>
-        <Serial>1002</Serial>
-        <Phone>+1 801-555-1002</Phone>
-        <Email>alfred.c@example.com</Email>
-        <Company>Bluewave Marketing</Company>
-    </Contact>
-    <Contact>
-        <Name>Janvel A</Name>
-        <Serial>1003</Serial>
-        <Phone>+1 801-555-1003</Phone>
-        <Email>janvel.a@example.com</Email>
-        <Company>NextGen Logistics</Company>
-    </Contact>
-</Contacts>
+  </Contacts>
 </ResultInfo>';
 
 send_output($output);
 exit;
+}
 
-//===============================================================
-//  LIVE IMPLEMENTATION LOGIC (Executes if stub above is removed)
-//===============================================================
+// -----------------------------------------------------------
+// 3. LIVE MODE (Server/Database)
+// -----------------------------------------------------------
 
-// 1. Calculate and Verify Hash
+// A. Include Database Files
+if (file_exists('ccu_include/ccu_function.php')) {
+require_once('ccu_include/ccu_function.php');
+} elseif (file_exists('../ccu_include/ccu_function.php')) {
+require_once('../ccu_include/ccu_function.php');
+} else {
+die("Error: ccu_function.php not found.");
+}
+
+if (file_exists('send_output.php')) {
+require_once('send_output.php');
+}
+
+if (!isset($mysqli_link) || !$mysqli_link) {
+die("Error: Database connection failed.");
+}
+
+// B. Verify Hash
 $hash = sha1($device_ID . $requestDate . $authorization_code);
 
-// Log the request
-$request_text = var_export($_REQUEST, true);
-$request_text = mysqli_real_escape_string($mysqli_link, $request_text);
-$request_text = mysqli_real_escape_string($mysqli_link, $request_text);
-$log_sql = 'INSERT INTO web_log SET 
-    method="GetContact", 
-    text="' . $request_text . '", 
-    created="' . date("Y-m-d H:i:s") . '"';
-debug("Web log: " . $log_sql);
-// mysqli_query($mysqli_link, $log_sql); // Uncomment to enable logging to DB
-
-debug("Calculated Hash: $hash | Received Key: $key");
-
 if ($hash != $key) {
-    $output = "<ResultInfo>
-        <ErrorNumber>102</ErrorNumber>
-        <Result>Fail</Result>
-        <Message>" . get_text("vcservice", "_err102b") . "</Message>
-    </ResultInfo>";
-    $log_comment = "Hash Error: " . $hash . " != " . $key;
-    send_output($output);
-    exit;
+$output = "<ResultInfo>
+  <ErrorNumber>102</ErrorNumber>
+  <Result>Fail</Result>
+  <Message>" . (function_exists('get_text') ? get_text("vcservice", "_err102b") : "Hash Error") . "</Message>
+</ResultInfo>";
+send_output($output);
+exit;
 }
 
-// 2. Check Software Version
-$current_mobile_version = get_setting("system", "current_giftology_version"); // Updated setting name
-if ($current_mobile_version > $mobile_version) {
-    $output = "<ResultInfo>
-        <ErrorNumber>106</ErrorNumber>
-        <Result>Fail</Result>
-        <Message>" . get_text("vcservice", "_err106") . "</Message>
-    </ResultInfo>";
-    send_output($output);
-    exit;
+// C. Get Subscriber ID from Auth Code
+$sql_auth = 'SELECT subscriber_serial FROM authorization_code
+JOIN employee ON authorization_code.employee_serial = employee.employee_serial
+WHERE employee.deleted_flag=0
+AND authorization_code.authorization_code="' . mysqli_real_escape_string($mysqli_link, $authorization_code) . '"';
+
+$result_auth = mysqli_query($mysqli_link, $sql_auth);
+$auth_row = mysqli_fetch_assoc($result_auth);
+
+if (!$auth_row) {
+$output = "<ResultInfo>
+  <ErrorNumber>103</ErrorNumber>
+  <Result>Fail</Result>
+  <Message>Invalid Authorization Code</Message>
+</ResultInfo>";
+send_output($output);
+exit;
 }
 
-// 3. Validate Authorization Code & Get Subscriber
-// This checks who is LOGGED IN (still usually in 'employee' table), to find their Subscriber ID
-$sql = 'select * from authorization_code 
-        join employee on authorization_code.employee_serial = employee.employee_serial 
-        where employee.deleted_flag=0 
-        and authorization_code.authorization_code="' . $authorization_code . '"';
+$subscriber_serial = $auth_row["subscriber_serial"];
+
+// -----------------------------------------------------------
+// D. RETRIEVE CONTACT (MODIFIED QUERY)
+// -----------------------------------------------------------
+
+// Start the query
+$sql = "SELECT * FROM contact
+WHERE subscriber_serial = '$subscriber_serial'
+AND deleted_flag = 0";
+
+// IF a specific serial was requested, append the filter
+if (!empty($target_contact_serial)) {
+$safe_serial = mysqli_real_escape_string($mysqli_link, $target_contact_serial);
+$sql .= " AND contact_serial = '$safe_serial'";
+}
+
+// Order by name
+$sql .= " ORDER BY first_name";
 
 $result = mysqli_query($mysqli_link, $sql);
 
-if (mysqli_error($mysqli_link)) {
-    debug("Auth Code SQL Error: " . mysqli_error($mysqli_link));
-    exit;
+if (!$result) {
+$output = "<ResultInfo>
+  <ErrorNumber>103</ErrorNumber>
+  <Result>Fail</Result>
+  <Message>Database Error: " . mysqli_error($mysqli_link) . "</Message>
+</ResultInfo>";
+send_output($output);
+exit;
 }
 
-$authorization_row = mysqli_fetch_assoc($result);
-
-if (!$authorization_row) {
-    // Handle invalid auth code
-    $output = "<ResultInfo>
-        <ErrorNumber>103</ErrorNumber>
-        <Result>Fail</Result>
-        <Message>Invalid Authorization Code</Message>
-    </ResultInfo>";
-    send_output($output);
-    exit;
-}
-
-$subscriber_serial = $authorization_row["subscriber_serial"];
-debug("Subscriber Serial: " . $subscriber_serial);
-
-// 4. Retrieve Contacts
-// REVISED: Query the 'contact' table based on the new schema
-$sql = 'SELECT * FROM contact 
-        WHERE subscriber_serial ="' . $subscriber_serial . '" 
-        AND deleted_flag = 0 
-        ORDER BY first_name';
-
-$result = mysqli_query($mysqli_link, $sql);
-
-if (mysqli_error($mysqli_link)) {
-    $error = mysqli_error($mysqli_link);
-    $output = "<ResultInfo>
-        <ErrorNumber>103</ErrorNumber>
-        <Result>Fail</Result>
-        <Message>" . get_text("vcservice", "_err103a") . " " . $error . "</Message>
-    </ResultInfo>";
-    send_output($output);
-    exit;
-}
-
-// 5. Build XML Output
+// E. Build Output
 $output = '<ResultInfo>
-<ErrorNumber>0</ErrorNumber>
-<Result>Success</Result>
-<Message>Contact retrieved successfully</Message>
-<Contacts>';
+  <ErrorNumber>0</ErrorNumber>
+  <Result>Success</Result>
+  <Message>Contact retrieved successfully</Message>
+  <Contacts>';
 
-while ($row = mysqli_fetch_assoc($result)) {
-    
-    // REVISED: Simplified name logic (No preferred_name in schema)
-    $contact_name = trim($row["first_name"] . " " . $row["last_name"]);
+    // Check if any contacts were found
+    if (mysqli_num_rows($result) == 0) {
+    // Optional: You could change the message if no contact found
+    // but typically we just return an empty <Contacts> list
+      }
 
-    // REVISED: Mapping fields based on the 'contact' table image
-    $serial  = $row["contact_serial"];    // Primary Key
-    $phone   = $row["mobile_phone"];      // Column: mobile_phone
-    $email   = $row["email"];             // Column: email
-    $company = $row["company_name"];      // Column: company_name
+      while ($row = mysqli_fetch_assoc($result)) {
+      $contact_name = trim($row["first_name"] . " " . $row["last_name"]);
 
-    // Handle null values to avoid XML errors
-    if(is_null($phone)) { $phone = ""; }
-    if(is_null($email)) { $email = ""; }
-    if(is_null($company)) { $company = ""; }
+      // Handle Nulls
+      $serial = $row["contact_serial"];
+      $phone = $row["mobile_phone"] ?? "";
+      $email = $row["email"] ?? "";
+      $company = $row["company_name"] ?? "";
 
-    $output .= '
-    <Contact>
+      $output .= '
+      <Contact>
         <Name>' . $contact_name . '</Name>
         <Serial>' . $serial . '</Serial>
         <Phone>' . $phone . '</Phone>
         <Email>' . $email . '</Email>
         <Company>' . $company . '</Company>
-    </Contact>';
-}
+      </Contact>';
+      }
 
-$output .= '</Contacts>
+      $output .= '
+    </Contacts>
 </ResultInfo>';
 
 send_output($output);

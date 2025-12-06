@@ -15,11 +15,15 @@
  ******************************************************************/
 
 $debugflag = false;
-
 // RKG 10/20/25 allow the debugflag to be switched on in the GET method call
 if (isset($_REQUEST["debugflag"])) {
     $debugflag = true;
 }
+if($debugflag){
+
+}
+var_dump($_REQUEST);
+
 
 // This stops JavaScript from being written because this is a microservice API
 $suppress_javascript = true;
@@ -78,26 +82,40 @@ $log_sql = 'insert web_log SET method="GetUserInfo", text="' . $request_text . '
 debug("Web log: " . $log_sql);
 
 
-//---------------------------------------------------------------
-//  STUB MODE — return static XML test data before hash validation
-//---------------------------------------------------------------
-// JE 11/12/25 The stub executes prior to real validation to allow mobile testing
-// even if backend systems or hash validation are not yet active.
+// RKG 11/6/24 - Get the emmployee based on the authorization code
+// don't allow expired authorization code
+$sql= 'select * from authorization_code join user on authorization_code.user_serial = user.user_serial '.
+    ' join subscriber on user.subscriber_serial=subscriber.subscriber_serial '.
+    ' where user.deleted_flag=0 and authorization_code.authorization_code="' . $authorization_code. '"';
+debug("109 get the code: " . $sql);
+
+// Execute and check for success
+$result=mysqli_query($mysqli_link,$sql);
+if ( mysqli_error($mysqli_link)) {
+	debug("line q144 sql error ". mysqli_error($mysqli_link));
+	debug("exit 146");
+	exit;
+}
+$authorization_row = mysqli_fetch_assoc($result);
+
+$user_serial = $authorization_row["user_serial"];
+$subscriber_serial = $authorization_row["subscriber_serial"];
+
+// RKG 12/5/25 
 $output = '<ResultInfo>
 <ErrorNumber>0</ErrorNumber>
 <Result>Success</Result>
-<Message>Contact retrieved successfully</Message>
+<Message>User info retrieved successfully</Message>
 <Conctact>
-	<Name>Sara Berra</Name>
-    <Email>sara@giftologygroup.com</Email>
-    <Company>Giftology</Company>
-    <Serial>5</Serial>
-    <Subscriber>1</Subscriber >
+	<Name>'. $authorization_row["first_name"] ." ".  $authorization_row["last_name"] .'</Name>
+    <Email>'. $authorization_row["email"] . '</Email>
+    <Company>'. $authorization_row["company_name"] . '</Company>
+    <Serial>'. $authorization_row["user_serial"] . '</Serial>
+    <Subscriber>'. $authorization_row["subscriber_serial"] . '</Subscriber >
 </Contact>
 </ResultInfo>';
 
 // JE 11/12/25 immediately return stub data for testing without validation
 send_output($output);
-exit;
 
 ?>

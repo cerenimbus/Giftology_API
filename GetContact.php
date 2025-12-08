@@ -23,7 +23,7 @@
     // Set to TRUE for live server
     // Set to False for local testing
     // ===============================================================
-    $LIVE_MODE = false; 
+    $LIVE_MODE = true; 
     // ===============================================================
 
     $debugflag = isset($_REQUEST["debugflag"]);

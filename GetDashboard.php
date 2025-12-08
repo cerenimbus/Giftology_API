@@ -160,6 +160,35 @@ $output = "<ResultInfo>
 			<TaskName>Drop By<TaskName>
 			<Date>11-20-2025</Date>
 		</Task>
+
+		<DOVGraph>
+			<DataPoint>
+				<Label>10/01/2025</Label>
+				<Value>46</Value>
+			</DataPoint>
+			<DataPoint>
+				<Label>11/01/2025</Label>
+				<Value>89</Value>
+			</DataPoint>
+			<DataPoint>
+				<Label>12/01/2025</Label>
+				<Value>345</Value>
+			</DataPoint>
+		</DOVGraph>
+		<RevenueGraph>
+			<DataPoint>
+				<Label>10/01/2025</Label>
+				<Value>10200</Value>
+			</DataPoint>
+			<DataPoint>
+				<Label>11/01/2025</Label>
+				<Value>16230</Value>
+			</DataPoint>
+			<DataPoint>
+				<Label>12/01/2025</Label>
+				<Value>20100</Value>
+			</DataPoint>
+		</RevenueGraph>
 		<DOV>
 			<Name>Phone calls</Name>
 			<Count>10000</Count>

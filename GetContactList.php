@@ -24,7 +24,6 @@ $debugflag = false;
 $suppress_javascript = true;
 
 // be sure we can find the function file for inclusion
-
 if (file_exists(__DIR__ . '/ccu_include/ccu_function.php')) {
 	require_once(__DIR__ . '/ccu_include/ccu_function.php');
 } elseif (file_exists(__DIR__ . '/../ccu_include/ccu_function.php')) {
@@ -37,6 +36,7 @@ else {
 // GENIE 04/22/14 (from DeAuthorizeVoter.php)
 // this function is used to output the result and to store the result in the log
 debug( "get the send output php");
+
 // be sure we can find the function file for inclusion
 if (file_exists(__DIR__ . '/ccu_include/send_output.php')) {
 	require_once(__DIR__ . '/ccu_include/send_output.php');
@@ -66,6 +66,7 @@ $hash = sha1($device_ID . $requestDate.$authorization_code  );
 // make a log entry for this call to the web service
 // compile a string of all of the request values
 $text= var_export($_REQUEST, true);
+
 //RKG 3/10/15 clean quote marks
 $test = str_replace(chr(34), "'", $text);
 $log_sql= 'insert web_log SET method="GetTaskList", text="'. $text. '", created="' . date("Y-m-d H:i:s") .'"';
@@ -160,7 +161,7 @@ if (mysqli_error($mysqli_link)) {
 
 $authorization_row = mysqli_fetch_assoc($result);
 
-$subscriber_serial = $auth_row["subscriber_serial"];
+$subscriber_serial = $authorization_row["subscriber_serial"] ?? null;
 
 $sql = 'SELECT 
     c.contact_serial, 
@@ -171,8 +172,7 @@ $sql = 'SELECT
     LEFT JOIN contact_to_user ctu ON c.contact_serial = ctu.contact_serial AND ctu.deleted_flag = 0
     LEFT JOIN user u ON ctu.user_serial = u.user_serial AND u.deleted_flag = 0
     WHERE c.subscriber_serial ="' . $subscriber_serial . '" 
-    AND c.deleted_flag = 0 
-    ORDER BY c.first_name ASC';
+    AND c.deleted_flag = 0';
 
 // IF a specific serial was requested, append the filter
 if (!empty($target_contact_serial)) {
@@ -185,10 +185,12 @@ if (!empty($target_contact_serial)) {
 debug("Contact list SQL: " . $sql);
 
 $result = mysqli_query($mysqli_link, $sql);
+
 // Rkg if error, write out API response.
 //if ( mysqlerr( $update_sql)) {
 if (mysqli_error($mysqli_link)) {
     $error = mysqli_error($mysqli_link);
+    
 	// GENIE 04/22/14 - change: echo xml to call send_output function
 	$output = "<ResultInfo>
 		<ErrorNumber>103</ErrorNumber>

@@ -233,9 +233,9 @@ if( $hash != $key){
 
 
 // RKG 11/20/2015 make sure they have the currnet software version. 
-$current_crewzcontrol_version = get_setting("system","current_crewzcontrol_version");
-debug("current_crewzcontrol_version = " . $current_crewzcontrol_version );
-if ( $current_crewzcontrol_version > $crewzcontrol_version){
+$current_mobile_version = get_setting("system","current_mobile_version");
+debug("current_mobile_version = " . $current_mobile_version );
+if ( $current_mobile_version > $mobile_version){
 	$output = "<ResultInfo>
 <ErrorNumber>106</ErrorNumber>
 <Result>Fail</Result>
@@ -245,18 +245,6 @@ if ( $current_crewzcontrol_version > $crewzcontrol_version){
 	exit;
 }
 
-// RKG  1/1/14check for longitude and latitide <> 0 if geocode level requires it
-// Rkg if error, write out API response.
-	if( $latitude==0 or $longitude == 0){
-		// GENIE 04/22/14 - change: echo xml to call send_output function
-		$output = "<ResultInfo>
-<ErrorNumber>205</ErrorNumber>
-<Result>Fail</Result>
-<Message>".get_text("vcservice", "_err205")."</Message>
-</ResultInfo>";
-	send_output($output);
-	exit;
-	}
 
 // RKG 11/6/24 - Get the emmployee based on the authorization code
 // don't allow expired authorization code

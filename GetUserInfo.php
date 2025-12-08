@@ -85,7 +85,7 @@ debug("Web log: " . $log_sql);
 // RKG 11/6/24 - Get the emmployee based on the authorization code
 // don't allow expired authorization code
 $sql= 'select * from authorization_code join user on authorization_code.user_serial = user.user_serial '.
-    ' join subscriber on user.subscriber_serial=subscriber.subscriber_serial '.
+    ' join      subscriber on user.subscriber_serial=subscriber.subscriber_serial '.
     ' where user.deleted_flag=0 and authorization_code.authorization_code="' . $authorization_code. '"';
 debug("109 get the code: " . $sql);
 
@@ -96,6 +96,7 @@ if ( mysqli_error($mysqli_link)) {
 	debug("exit 146");
 	exit;
 }
+
 $authorization_row = mysqli_fetch_assoc($result);
 
 $user_serial = $authorization_row["user_serial"];

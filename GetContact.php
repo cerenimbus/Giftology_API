@@ -17,7 +17,7 @@
 //       11/28/25 JE - Revise legacy GetEmployeeList to Giftology GetContact spec.
 //       11/28/25 JE - Implemented Stub mode and cleaned up SQL logic for live implementation.
 //       12/06/25 JE - Revise sql query to retrieve a single contact of the user.
-//       12/08/25 JE - Updated API for live server
+//       12/09/25 JE - fixed minor issues for testing
 
 $debugflag = false;
 // this stops the java scrip from being written because this is a microservice API
@@ -25,10 +25,10 @@ $suppress_javascript = true;
 
 // be sure we can find the function file for inclusion
 
-if (file_exists(__DIR__ . '/ccu_include/ccu_function.php')) {
-	require_once(__DIR__ . '/ccu_include/ccu_function.php');
-} elseif (file_exists(__DIR__ . '/../ccu_include/ccu_function.php')) {
-  require_once(__DIR__ . '/../ccu_include/ccu_function.php');
+if (file_exists('/ccu_include/ccu_function.php')) {
+	require_once('/ccu_include/ccu_function.php');
+} elseif (file_exists('/../ccu_include/ccu_function.php')) {
+  require_once('/../ccu_include/ccu_function.php');
 }
 else {
   echo "Cannot find required file ccu_include/ccu_function.php.  Contact programmer.";
@@ -38,10 +38,10 @@ else {
 // this function is used to output the result and to store the result in the log
 debug( "get the send output php");
 // be sure we can find the function file for inclusion
-if (file_exists(__DIR__ . '/ccu_include/send_output.php')) {
-	require_once(__DIR__ . '/ccu_include/send_output.php');
-} elseif (file_exists(__DIR__ . '/../ccu_include/send_output.php')) {
-  require_once(__DIR__ . '/../ccu_include/send_output.php');
+if (file_exists('/ccu_include/send_output.php')) {
+	require_once('/ccu_include/send_output.php');
+} elseif (file_exists('/../ccu_include/send_output.php')) {
+  require_once('/../ccu_include/send_output.php');
 }
 else {
   echo "Cannot find required file send_output.php.  Contact programmer.";
@@ -69,7 +69,7 @@ $hash = sha1($device_ID . $requestDate.$authorization_code  );
 $text= var_export($_REQUEST, true);
 //RKG 3/10/15 clean quote marks
 $test = str_replace(chr(34), "'", $text);
-$log_sql= 'insert web_log SET method="GetTaskList", text="'. $text. '", created="' . date("Y-m-d H:i:s") .'"';
+$log_sql= 'insert web_log SET method="GetContact", text="'. $text. '", created="' . date("Y-m-d H:i:s") .'"';
 debug("Web log:" .$log_sql);
 
 // FOR TESTING ONLY  write the values back out so we can see them

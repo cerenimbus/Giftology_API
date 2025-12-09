@@ -26,26 +26,31 @@ $suppress_javascript = true;
 
 // be sure we can find the function file for inclusion
 
-if (file_exists('/ccu_include/ccu_function.php')) {
-	require_once('/ccu_include/ccu_function.php');
-} elseif (file_exists('/../ccu_include/ccu_function.php')) {
-  require_once('/../ccu_include/ccu_function.php');
+if (file_exists('ccu_include/ccu_function.php')) {
+	require_once('ccu_include/ccu_function.php');
 }
 else {
-  echo "Cannot find required file ccu_include/ccu_function.php.  Contact programmer.";
+  // if we can't find it, terminate
+	if (!file_exists('../ccu_include/ccu_function.php')) {
+		echo "Cannot find required file ../ccu_include/ccu_function.php.  Contact programmer.";
+		exit;
+  }
+  require_once('../ccu_include/ccu_function.php');
 }
 
 // GENIE 04/22/14 (from DeAuthorizeVoter.php)
 // this function is used to output the result and to store the result in the log
 debug( "get the send output php");
 // be sure we can find the function file for inclusion
-if (file_exists('/ccu_include/send_output.php')) {
-	require_once('/ccu_include/send_output.php');
-} elseif (file_exists('/../ccu_include/send_output.php')) {
-  require_once('/../ccu_include/send_output.php');
-}
-else {
-  echo "Cannot find required file send_output.php.  Contact programmer.";
+if ( file_exists( 'send_output.php')) {
+    require_once( 'send_output.php');
+} else {
+    // if we can't find it, terminate
+    if ( !file_exists('../ccu_include/send_output.php')){
+        echo "Cannot find required file send_output.php Contact programmer.";
+        exit;
+    }
+    require_once('send_output.php');
 }
 
 

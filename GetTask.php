@@ -86,21 +86,21 @@ $requestDate   ."<br>".
 'Hash '. $hash  			."<br>"
 );
 
-// ALC 10/29/25 THIS IS A SAMPLE STUB. The purpose is to always return a successful message, for testing
-$output = '<ResultInfo>
-    <ErrorNumber>0</ErrorNumber>
-    <Result>Success</Result>
-    <Message>Stub single task (sample data)</Message>
-    <Task>
-        <Name>System Maintenance</Name>
-        <Serial>1003</Serial>
-        <Contact>IT Department</Contact>
-        <Date>10/30/2025</Date>
-        <Status>0</Status>
-    </Task>
-</ResultInfo>';
-send_output($output);
-exit;
+// // ALC 10/29/25 THIS IS A SAMPLE STUB. The purpose is to always return a successful message, for testing
+// $output = '<ResultInfo>
+//     <ErrorNumber>0</ErrorNumber>
+//     <Result>Success</Result>
+//     <Message>Stub single task (sample data)</Message>
+//     <Task>
+//         <Name>System Maintenance</Name>
+//         <Serial>1003</Serial>
+//         <Contact>IT Department</Contact>
+//         <Date>10/30/2025</Date>
+//         <Status>0</Status>
+//     </Task>
+// </ResultInfo>';
+// send_output($output);
+// exit;
 
 // Check the security key
 // GENIE 04/22/14 - change: echo xml to call send_output function

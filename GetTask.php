@@ -154,7 +154,7 @@ if (mysqli_error($mysqli_link)) {
 
 $authorization_row = mysqli_fetch_assoc($result);
 
-$user_serial = $auth_row["user_serial"];
+$employee_serial = $auth_row["employee_serial"];
 
 //-------------------------------------
 // FETCH A SINGLE TASK BY SERIAL
@@ -167,7 +167,7 @@ $sql = 'SELECT e.*, CONCAT(contact.first_name, " ", contact.last_name) AS contac
         AND e.contact_serial IN (
             SELECT contact_serial 
             FROM contact_to_user 
-            WHERE user_serial = ' . intval($user_serial) . '
+            WHERE employee_serial = ' . intval($employee_serial) . '
         )
         AND e.deleted_flag = 0
         LIMIT 1';

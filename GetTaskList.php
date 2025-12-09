@@ -169,7 +169,7 @@ if (mysqli_error($mysqli_link)) {
 
 $authorization_row = mysqli_fetch_assoc($result);
 
-$user_serial = $authorization_row["user_serial"];
+$employee_serial = $authorization_row["employee_serial"];
 
 $sql = 'SELECT *, CONCAT(contact.first_name, " ", contact.last_name) AS contact_name
         FROM event e
@@ -178,7 +178,7 @@ $sql = 'SELECT *, CONCAT(contact.first_name, " ", contact.last_name) AS contact_
         LEFT JOIN workflow_detail_type wdt ON wd.workflow_detail_type_serial = wdt.workflow_detail_type_serial
         LEFT JOIN contact ON e.contact_serial = contact.contact_serial
         WHERE e.contact_serial IN (
-            SELECT contact_serial FROM contact_to_user WHERE user_serial = ' . intval($user_serial) . '
+            SELECT contact_serial FROM contact_to_user WHERE employee_serial = ' . intval($employee_serial) . '
         )
         AND e.deleted_flag = 0
         ORDER BY e.event_target_date ASC';

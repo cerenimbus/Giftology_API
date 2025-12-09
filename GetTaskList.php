@@ -148,11 +148,8 @@ $current_mobile_version = get_setting("system","current_mobile_version");
 }
 
 // Retrieve user info from authorization code
-$sql = 'SELECT * 
-        FROM authorization_code AS ac
-        JOIN `user` AS u ON ac.user_serial = u.user_serial
-        WHERE u.deleted_flag = 0
-        AND ac.authorization_code = "' . $authorization_code . '"';
+$sql= 'select * from authorization_code join employee on authorization_code.employee_serial = employee.employee_serial where employee.deleted_flag=0 and authorization_code.authorization_code="' . $authorization_code. '"';
+debug("get the code: " . $sql);
 
 // Execute the insert and check for success
 $result = mysqli_query($mysqli_link, $sql);

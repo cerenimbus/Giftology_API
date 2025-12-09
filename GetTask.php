@@ -133,7 +133,7 @@ $current_mobile_version = get_setting("system","current_mobile_version");
 }
 
 // Retrieve user info from authorization code
-$sql= 'select * from authorization_code join employee on authorization_code.employee_serial = employee.employee_serial where employee.deleted_flag=0 and authorization_code.authorization_code="' . $authorization_code. '"';
+$sql= 'select * from authorization_code join user on authorization_code.user_serial = user.user_serial where user.deleted_flag=0 and authorization_code.authorization_code="' . $authorization_code. '"';
 debug("get the code: " . $sql);
 
 // Execute the insert and check for success
@@ -154,7 +154,7 @@ if (mysqli_error($mysqli_link)) {
 
 $authorization_row = mysqli_fetch_assoc($result);
 
-$employee_serial = $auth_row["employee_serial"];
+$user_serial = $authorization_row["user_serial"];
 
 //-------------------------------------
 // FETCH A SINGLE TASK BY SERIAL
@@ -167,7 +167,7 @@ $sql = 'SELECT e.*, CONCAT(contact.first_name, " ", contact.last_name) AS contac
         AND e.contact_serial IN (
             SELECT contact_serial 
             FROM contact_to_user 
-            WHERE employee_serial = ' . intval($employee_serial) . '
+            WHERE user_serial = ' . intval($user_serial) . '
         )
         AND e.deleted_flag = 0
         LIMIT 1';

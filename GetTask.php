@@ -133,7 +133,11 @@ $current_mobile_version = get_setting("system","current_mobile_version");
 }
 
 // Retrieve user info from authorization code
-$sql= 'select * from authorization_code join user on authorization_code.user_serial = user.user_serial where user.deleted_flag=0 and authorization_code.authorization_code="' . $authorization_code. '"';
+$sql = 'SELECT * 
+        FROM giftology.authorization_code AS ac
+        JOIN giftology.user AS u ON ac.user_serial = u.user_serial
+        WHERE u.deleted_flag = 0 
+        AND ac.authorization_code = "' . $authorization_code . '"';
 debug("get the code: " . $sql);
 
 // Execute the insert and check for success
@@ -154,7 +158,7 @@ if (mysqli_error($mysqli_link)) {
 
 $authorization_row = mysqli_fetch_assoc($result);
 
-$user_serial = $authorization_row["user_serial"];
+$user_serial = authorization_row["user_serial"];
 
 //-------------------------------------
 // FETCH A SINGLE TASK BY SERIAL

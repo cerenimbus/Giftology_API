@@ -12,66 +12,90 @@
  Author: Karl Matthew Linao
  Date:   11/28/2025
  History:
-    11/28/2025   KML - Created based on UpdateFeedback stub and 
-                       modified for Giftology VCService Task Update spec.
-    11/28/2025   KML - Reviewed and cleaned up comments. change from rrservice to vcservice.
-
+    11/28/2025   KML - Created based on UpdateFeedback stub.
+    11/28/2025   KML - Reviewed and cleaned up comments.
+    12/09/2025   KML - Added proper security hash validation before stub.
  ******************************************************************/
 
 //---------------------------------------------------------------
-// Initialization and configuration
+// Initialization
 //---------------------------------------------------------------
 require_once('send_output.php');
 $debugflag = false;
 $suppress_javascript = true;
 
-// Include function file
-if (file_exists('ccu_include/ccu_function.php')) {
+//---------------------------------------------------------------
+// File includes
+//---------------------------------------------------------------
+if (file_exists('ccu_include/ccu_function.php'))
     require_once('ccu_include/ccu_function.php');
-} else {
-    if (!file_exists('../ccu_include/ccu_function.php')) {
-        echo "Cannot find required file ../ccu_include/ccu_function.php. Contact programmer.";
-        exit;
-    }
+else if (file_exists('../ccu_include/ccu_function.php'))
     require_once('../ccu_include/ccu_function.php');
+else {
+    echo "Cannot find ccu_function.php. Contact programmer.";
+    exit;
 }
 
-// Include security hashing
-if (file_exists('ccu_include/ccu_password_security.php')) {
+if (file_exists('ccu_include/ccu_password_security.php'))
     require_once('ccu_include/ccu_password_security.php');
-} else {
-    if (!file_exists('../ccu_include/ccu_password_security.php')) {
-        echo "Cannot find required file ../ccu_include/ccu_password_security.php. Contact programmer.";
-        exit;
-    }
+else if (file_exists('../ccu_include/ccu_password_security.php'))
     require_once('../ccu_include/ccu_password_security.php');
+else {
+    echo "Cannot find ccu_password_security.php. Contact programmer.";
+    exit;
 }
 
 //---------------------------------------------------------------
-// Logging setup
+// Logging
 //---------------------------------------------------------------
 debug("UpdateTask called");
 
-$text = var_export($_REQUEST, true);
-$test = str_replace(chr(34), "'", $text);
-$log_sql = 'INSERT web_log SET method="UpdateTask", text="' . $test . '", created="' . date("Y-m-d H:i:s") . '"';
-debug("Web log: " . $log_sql);
+$raw_request = var_export($_REQUEST, true);
+$clean_request = str_replace('"', "'", $raw_request);
+debug("Web log: " . $clean_request);
 
 //---------------------------------------------------------------
-// Retrieve parameters
+// Retrieve Parameters
 //---------------------------------------------------------------
-$deviceID        = $_REQUEST["DeviceID"] ?? "";
-$requestDate     = $_REQUEST["Date"] ?? "";
-$key             = $_REQUEST["Key"] ?? "";
-$authorization   = $_REQUEST["AC"] ?? "";
-$language        = $_REQUEST["Language"] ?? "";
-$mobileVersion   = $_REQUEST["MobileVersion"] ?? "";
-$taskID          = $_REQUEST["Task"] ?? "";
-$status          = $_REQUEST["Status"] ?? "";   // 1 or 0
+$deviceID      = $_REQUEST["DeviceID"] ?? "";
+$requestDate   = $_REQUEST["Date"] ?? "";
+$key           = $_REQUEST["Key"] ?? "";
+$authorization = $_REQUEST["AC"] ?? "";
+$language      = $_REQUEST["Language"] ?? "";
+$mobileVersion = $_REQUEST["MobileVersion"] ?? "";
+$taskID        = $_REQUEST["Task"] ?? "";
+$status        = $_REQUEST["Status"] ?? "";  // 0 or 1
 
 //---------------------------------------------------------------
-// *** STUB SECTION ***
-// Always return success for offline testing
+// Language Setup
+//---------------------------------------------------------------
+set_language($language);
+
+//---------------------------------------------------------------
+// SECURITY HASH CHECK (ADDED)
+//---------------------------------------------------------------
+$expectedKey = sha1($deviceID . $requestDate . $authorization);
+
+debug("DeviceID: $deviceID");
+debug("RequestDate: $requestDate");
+debug("Received Key: $key");
+debug("Expected Key: $expectedKey");
+
+if ($expectedKey !== $key) {
+    debug("Security hash mismatch");
+
+    $output = "<ResultInfo>
+        <ErrorNumber>102</ErrorNumber>
+        <Result>Fail</Result>
+        <Message>" . get_text("vcservice", "_err102a") . "</Message>
+    </ResultInfo>";
+
+    send_output($output);
+    exit;
+}
+
+//---------------------------------------------------------------
+// *** STUB MODE (Runs only after security passes) ***
 //---------------------------------------------------------------
 /*
 $output = "<ResultInfo>
@@ -84,38 +108,7 @@ exit;
 */
 
 //---------------------------------------------------------------
-// Language Setup
-//---------------------------------------------------------------
-set_language($language);
-
-//---------------------------------------------------------------
-// Security Hash Calculation
-//---------------------------------------------------------------
-$expectedKey = sha1($deviceID . $requestDate . $authorization);
-
-debug("DeviceID: $deviceID");
-debug("RequestDate: $requestDate");
-debug("Key Received: $key");
-debug("ExpectedKey: $expectedKey");
-
-//---------------------------------------------------------------
-// Security validation
-//---------------------------------------------------------------
-if ($expectedKey !== $key) {
-    debug("Hash security mismatch");
-
-    $output = "<ResultInfo>
-<ErrorNumber>102</ErrorNumber>
-<Result>Fail</Result>
-<Message>" . get_text("vcservice", "_err102a") . "</Message>
-</ResultInfo>";
-
-    send_output($output);
-    exit;
-}
-
-//---------------------------------------------------------------
-// Validate task input
+// Input Validation
 //---------------------------------------------------------------
 if ($taskID === "" || !is_numeric($taskID)) {
     $output = "<ResultInfo>
@@ -138,7 +131,7 @@ if ($status !== "0" && $status !== "1") {
 }
 
 //---------------------------------------------------------------
-// Insert or Update Task Status in Database
+// Insert / Update Task Status
 //---------------------------------------------------------------
 $update_sql = "
     INSERT INTO user_tasks
@@ -170,7 +163,7 @@ if (mysqli_error($mysqli_link)) {
 }
 
 //---------------------------------------------------------------
-// Success Output
+// Success Response
 //---------------------------------------------------------------
 $output = "<ResultInfo>
 <ErrorNumber>0</ErrorNumber>

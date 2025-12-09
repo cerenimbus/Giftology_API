@@ -19,6 +19,7 @@
     11/18/2025   ALC - Updated arguments and stub
     11/21/2025   KML - Added dovChartData & revenueChartData fields for dashboard graphs
     11/28/2025   KML - Reviewed and cleaned up comments. change from rrservice to vcservice.
+    12/09/2025   KML - Stub moved AFTER security check
  ******************************************************************/
 
 //---------------------------------------------------------------
@@ -54,10 +55,30 @@ $language           = $_REQUEST["Language"] ?? 'EN';
 $mobile_version     = $_REQUEST["MobileVersion"] ?? '1';
 
 //---------------------------------------------------------------
-//  STUB SECTION (Return static XML before any validation)
+//  SECURITY VALIDATION
 //---------------------------------------------------------------
-// 11/21/2025 — Added chart data fields needed by the dashboard API
+$hash = sha1($device_ID . $requestDate . $authorization_code);
 
+// Log request
+$text = var_export($_REQUEST, true);
+$test = str_replace(chr(34), "'", $text);
+$log_sql = 'INSERT web_log SET method="GetDOVDateList", text="' . $test . '", created="' . date("Y-m-d H:i:s") . '"';
+debug("Web log: " . $log_sql);
+
+// Validate hash
+if ($hash != $key) {
+    $output = "<ResultInfo>
+<ErrorNumber>102</ErrorNumber>
+<Result>Fail</Result>
+<Message>" . get_text("vcservice", "_err102b") . "</Message>
+</ResultInfo>";
+    send_output($output);
+    exit;
+}
+
+//---------------------------------------------------------------
+//  STUB SECTION (Now AFTER SECURITY CHECK)
+//---------------------------------------------------------------
 $output = '<ResultInfo>
     <ErrorNumber>0</ErrorNumber>
     <Result>Success</Result>
@@ -108,34 +129,10 @@ send_output($output);
 exit;
 
 //---------------------------------------------------------------
-//  NORMAL EXECUTION BELOW (only runs after removing stub)
+//  NORMAL EXECUTION BELOW (not used while stub is active)
 //---------------------------------------------------------------
 
-// Compute SHA1 hash
-$hash = sha1($device_ID . $requestDate . $authorization_code);
-
-// Log request
-$text = var_export($_REQUEST, true);
-$test = str_replace(chr(34), "'", $text);
-$log_sql = 'INSERT web_log SET method="GetDOVDateList", text="' . $test . '", created="' . date("Y-m-d H:i:s") . '"';
-debug("Web log: " . $log_sql);
-
-//---------------------------------------------------------------
-//  SECURITY VALIDATION
-//---------------------------------------------------------------
-if ($hash != $key) {
-    $output = "<ResultInfo>
-<ErrorNumber>102</ErrorNumber>
-<Result>Fail</Result>
-<Message>" . get_text("vcservice", "_err102b") . "</Message>
-</ResultInfo>";
-    send_output($output);
-    exit;
-}
-
-//---------------------------------------------------------------
-//  AUTHORIZATION CODE LOOKUP
-//---------------------------------------------------------------
+// AUTHORIZATION CODE LOOKUP
 $sql = 'SELECT * FROM authorization_code 
         JOIN employee ON authorization_code.employee_serial = employee.employee_serial 
         WHERE employee.deleted_flag=0 
@@ -151,9 +148,7 @@ $authorization_row = mysqli_fetch_assoc($result);
 $employee_serial   = $authorization_row["employee_serial"];
 $subscriber_serial = $authorization_row["subscriber_serial"];
 
-//---------------------------------------------------------------
-//  MAIN QUERY SECTION
-//---------------------------------------------------------------
+// MAIN QUERY
 $sql = 'SELECT * FROM contact_event 
         WHERE subscriber_serial ="' . $subscriber_serial . '" 
         ORDER BY event_date DESC';
@@ -172,9 +167,7 @@ if (mysqli_error($mysqli_link)) {
     exit;
 }
 
-//---------------------------------------------------------------
-//  XML OUTPUT CONSTRUCTION
-//---------------------------------------------------------------
+// BUILD XML OUTPUT
 $output = '<ResultInfo>
 <ErrorNumber>0</ErrorNumber>
 <Result>Success</Result>

@@ -87,32 +87,32 @@ $requestDate   ."<br>".
 'Hash '. $hash  			."<br>"
 );
 
-// STUB: Return only ONE contact to simulate the specific query
-$output = '<ResultInfo>
-  <ErrorNumber>0</ErrorNumber>
-  <Result>Success</Result>
-  <Message>Contact list retrieved successfully (STUB)</Message>
-  <Contacts>
-    <Contact>
-      <Name>James E</Name>
-      <Serial>1001</Serial>
-      <Status>Active</Status>
-    </Contact>
-    <Contact>
-      <Name>Alfred C</Name>
-      <Serial>1002</Serial>
-      <Status>Active</Status>
-    </Contact>
-    <Contact>
-      <Name>Janvel A</Name>
-      <Serial>1003</Serial>
-      <Status>Active</Status>
-    </Contact>
-  </Contacts>
-</ResultInfo>';
+// // STUB: Return only ONE contact to simulate the specific query
+// $output = '<ResultInfo>
+//   <ErrorNumber>0</ErrorNumber>
+//   <Result>Success</Result>
+//   <Message>Contact list retrieved successfully (STUB)</Message>
+//   <Contacts>
+//     <Contact>
+//       <Name>James E</Name>
+//       <Serial>1001</Serial>
+//       <Status>Active</Status>
+//     </Contact>
+//     <Contact>
+//       <Name>Alfred C</Name>
+//       <Serial>1002</Serial>
+//       <Status>Active</Status>
+//     </Contact>
+//     <Contact>
+//       <Name>Janvel A</Name>
+//       <Serial>1003</Serial>
+//       <Status>Active</Status>
+//     </Contact>
+//   </Contacts>
+// </ResultInfo>';
 
-send_output($output);
-exit;
+// send_output($output);
+// exit;
 
 
 // Check the security key

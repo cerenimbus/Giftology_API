@@ -18,6 +18,7 @@
 //          11/14/25 updated error messages and query
 //          11/28/25 proper parameters, commented out stub, updated queries
 //          12/08/25 fixed api
+//          12/09/25 fixing sql statement
 //***************************************************************
 
 $debugflag = false;
@@ -148,11 +149,7 @@ $current_mobile_version = get_setting("system","current_mobile_version");
 }
 
 // Retrieve user info from authorization code
-$sql = 'SELECT * 
-        FROM giftology.authorization_code AS ac
-        JOIN giftology.user AS u ON ac.user_serial = u.user_serial
-        WHERE u.deleted_flag = 0 
-        AND ac.authorization_code = "' . $authorization_code . '"';
+$sql = 'select * from authorization_code join user on authorization_code.user_serial = user.user_serial where user.deleted_flag=0 and authorization_code.authorization_code="' . $authorization_code . '"';
 debug("get the code: " . $sql);
 
 // Execute the insert and check for success
@@ -163,7 +160,7 @@ if (mysqli_error($mysqli_link)) {
     $output = "<ResultInfo>
 		<ErrorNumber>103</ErrorNumber>
 		<Result>Fail</Result>
-		<Message>" . get_text("vcservice", "_err103a") . " " . $update_sql . " " .  $error . "</Message>
+		<Message>" . get_text("vcservice", "_err103a") . " " . $sql . " " .  $error . "</Message>
 		</ResultInfo>";
     debug("Mysql error: " . $error . "  ", $sql);
     $log_comment =  $error;
@@ -175,19 +172,32 @@ $authorization_row = mysqli_fetch_assoc($result);
 
 $user_serial = $authorization_row["user_serial"];
 
-$sql = 'SELECT *, CONCAT(contact.first_name, " ", contact.last_name) AS contact_name
+
+// $sql = 'SELECT *, CONCAT(contact.first_name, " ", contact.last_name) AS contact_name
+//         FROM event e
+//         JOIN workflow_detail wd ON e.workflow_detail_serial = wd.workflow_detail_serial
+//         JOIN workflow w ON wd.workflow_serial = w.workflow_serial
+//         LEFT JOIN workflow_detail_type wdt ON wd.workflow_detail_type_serial = wdt.workflow_detail_type_serial
+//         LEFT JOIN contact ON e.contact_serial = contact.contact_serial
+//         WHERE e.contact_serial IN (
+//             SELECT contact_serial FROM contact_to_user WHERE user_serial = ' . intval($user_serial) . '
+//         )
+//         AND e.deleted_flag = 0
+//         ORDER BY e.event_target_date ASC';
+$sql = 'SELECT *, 
+        CONCAT(contact.first_name, " ", contact.last_name) AS contact_name
         FROM event e
         JOIN workflow_detail wd ON e.workflow_detail_serial = wd.workflow_detail_serial
         JOIN workflow w ON wd.workflow_serial = w.workflow_serial
         LEFT JOIN workflow_detail_type wdt ON wd.workflow_detail_type_serial = wdt.workflow_detail_type_serial
         LEFT JOIN contact ON e.contact_serial = contact.contact_serial
-        WHERE e.contact_serial IN (
-            SELECT contact_serial FROM contact_to_user WHERE user_serial = ' . intval($user_serial) . '
-        )
+        LEFT JOIN user u ON contact.subscriber_serial = u.subscriber_serial
+        WHERE u.user_serial = ' . intval($user_serial) . '
         AND e.deleted_flag = 0
         ORDER BY e.event_target_date ASC';
 
 debug("Task list SQL: " . $sql);
+
 
 $result = mysqli_query($mysqli_link, $sql);
 // Rkg if error, write out API response.
@@ -198,7 +208,7 @@ if (mysqli_error($mysqli_link)) {
 	$output = "<ResultInfo>
 		<ErrorNumber>103</ErrorNumber>
 		<Result>Fail</Result>
-		<Message>" . get_text("vcservice", "_err103a") . " " . $update_sql . " " . $error . "</Message>
+		<Message>" . get_text("vcservice", "_err103a") . " " . $sql . " " . $error . "</Message>
 		</ResultInfo>";
 	debug("Mysql error: " . $error . " -- " . $sql);
 	$log_comment = $error;

@@ -20,6 +20,7 @@
     11/21/2025   KML - Added dovChartData & revenueChartData fields for dashboard graphs
     11/28/2025   KML - Reviewed and cleaned up comments. change from rrservice to vcservice.
     12/09/2025   KML - Stub moved AFTER security check
+    12/11/2025   KML - FIXED Error 102 validation 
  ******************************************************************/
 
 //---------------------------------------------------------------

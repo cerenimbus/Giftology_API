@@ -22,6 +22,11 @@
 //***************************************************************
 
 $debugflag = false;
+
+if( isset($_REQUEST["debugflag"])) {
+    $debugflag = true;
+}
+
 // this stops the java scrip from being written because this is a microservice API
 $suppress_javascript = true;
 

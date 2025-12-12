@@ -97,7 +97,8 @@ $hash."<br>");
 
 	// RKG 11/6/24  Get the user serial - and verify security
 // RKG 11/6/24 - Get the emmployee based on the authorization code
-$sql= 'select * from user where deleted_flag=0 AND employee_device_ID="' . $device_ID.'"' ;
+$sql= 'select * from user where deleted_flag=0 AND email="' .
+     $username. '" and password="' .$password. '"' ;
 debug("get the user: " . $sql);
 
 // Execute the insert and check for success

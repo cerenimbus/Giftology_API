@@ -123,25 +123,39 @@ $current_mobile_version = get_setting("system","current_mobile_version");
 	exit;
 }
 
+// -------------------------
 // Retrieve user info from authorization code
-$sql = 'select * from authorization_code join user on authorization_code.user_serial = user.user_serial where user.deleted_flag=0 and authorization_code.authorization_code="' . $authorization_code . '"';
-debug("get the code: " . $sql);
+$authorization_sql = 'SELECT * FROM authorization_code 
+                      JOIN user ON authorization_code.user_serial = user.user_serial 
+                      WHERE user.deleted_flag = 0 
+                      AND authorization_code.authorization_code = "' . $authorization_code . '"';
+debug($authorization_sql);
 
-// Execute the insert and check for success
-$result = mysqli_query($mysqli_link, $sql);
-if (mysqli_error($mysqli_link)) {
-    $error =  mysqli_error($mysqli_link);
-    // GENIE 04/22/14 - change: echo xml to call send_output function
-    $output = "<ResultInfo>
-		<ErrorNumber>103</ErrorNumber>
-		<Result>Fail</Result>
-		<Message>" . get_text("vcservice", "_err103a") . " " . $sql . " " .  $error . "</Message>
-		</ResultInfo>";
-    debug("Mysql error: " . $error . "  ", $sql);
-    $log_comment =  $error;
-    send_output($output);
+// Excute and check for success
+$authorization_result=mysqli_query($mysqli_link,$authorization_sql);
+if ( mysqlerr( $authorization_sql)) {
     exit;
 }
+$authorization_row= mysqli_fetch_array( $authorization_result);
+$authorization_row_count = mysqli_num_rows($authorization_result);
+
+//-------------------------------------
+// If no authorization code is returned, give an error code indicating it was not found
+debug( "check for code found");
+debug($authorization_row['authorization_code']." = ". $authorization_code  );
+
+ 
+if ( $authorization_row['authorization_code']!= $authorization_code OR  $authorization_row_count==0 ){
+    // RKG 12/8/25 return error "invalid authorization code" if not found
+    $output = "<ResultInfo>
+<ErrorNumber>202</ErrorNumber>
+<Result>Fail</Result>
+<Message>".get_text("vcservice", "_err202a")."</Message>
+</ResultInfo>";
+send_output($output);
+    exit;
+}
+
 // // ALC 10/29/25 THIS IS A SAMPLE STUB. The purpose is to always return a successful message, for testing
 $output = '<ResultInfo>
        <ErrorNumber>0</ErrorNumber>

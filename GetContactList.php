@@ -19,6 +19,8 @@
 //       12/06/25 JE - Revise sql query to retrieve a single contact of the user.
 //       12/08/25 JE - Updated API for live server
 //       12/09/25 JE - fixed minor issues for testing
+//       12/16/25 JE - fixed sql issues for testing
+
 
 $debugflag = false;
 
@@ -180,7 +182,7 @@ $sql = 'SELECT
     u.status
     FROM contact c
     LEFT JOIN contact_to_user ctu ON c.contact_serial = ctu.contact_serial AND ctu.deleted_flag = 0
-    LEFT JOIN user u ON ctu.user_serial = u.user_serial AND u.deleted_flag = 0
+    LEFT JOIN user u ON ctu.contat_to_user_serial = u.user_serial AND u.deleted_flag = 0
     WHERE c.subscriber_serial ="' . $subscriber_serial . '" 
     AND c.deleted_flag = 0';
 

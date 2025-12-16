@@ -18,6 +18,7 @@
 //       11/28/25 JE - Implemented Stub mode and cleaned up SQL logic for live implementation.
 //       12/06/25 JE - Revise sql query to retrieve a single contact of the user.
 //       12/09/25 JE - fixed minor issues for testing
+//       12/16/25 JE - fixed sql issues for testing
 
 $debugflag = false;
 
@@ -169,11 +170,16 @@ $sql = 'SELECT
             c.last_name, 
             u.status
         FROM contact c
-        LEFT JOIN contact_to_user ctu ON c.contact_serial = ctu.contact_serial AND ctu.deleted_flag = 0
-        LEFT JOIN user u ON ctu.user_serial = u.user_serial AND u.deleted_flag = 0
+        LEFT JOIN contact_to_user ctu 
+          ON c.contact_serial = ctu.contact_serial 
+          AND ctu.deleted_flag = 0
+        LEFT JOIN user u 
+          ON ctu.contact_to_user_serial = u.user_serial 
+            AND u.deleted_flag = 0
         WHERE c.subscriber_serial ="' . $subscriber_serial . '" 
         AND c.contact_serial = "' . $target_contact_serial . '"
         AND c.deleted_flag = 0 
+        ORDER BY first_name
         LIMIT 1';
 
 // IF a specific serial was requested, append the filter
@@ -181,8 +187,6 @@ if (!empty($target_contact_serial)) {
   $safe_serial = mysqli_real_escape_string($mysqli_link, $target_contact_serial);
   $sql .= " AND contact_serial = '$safe_serial'";
   }
-  // Order by name
-  $sql .= " ORDER BY first_name";
 
 debug("Contact list SQL: " . $sql);
 

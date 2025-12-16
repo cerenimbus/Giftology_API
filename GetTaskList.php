@@ -133,7 +133,7 @@ debug($authorization_sql);
 
 // Excute and check for success
 $authorization_result=mysqli_query($mysqli_link,$authorization_sql);
-if ( mysqlerr( $authorization_sql)) {
+if ( mysqli_error( $authorization_sql)) {
     exit;
 }
 $authorization_row= mysqli_fetch_array( $authorization_result);
@@ -145,7 +145,7 @@ debug( "check for code found");
 debug($authorization_row['authorization_code']." = ". $authorization_code  );
 
  
-if ( $authorization_row['authorization_code']!= $authorization_code OR  $authorization_row_count==0 ){
+if ( $authorization_row['authorization_code']!= $authorization_code OR $authorization_row_count==0 ){
     // RKG 12/8/25 return error "invalid authorization code" if not found
     $output = "<ResultInfo>
 <ErrorNumber>202</ErrorNumber>

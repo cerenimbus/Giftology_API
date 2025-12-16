@@ -182,7 +182,7 @@ $sql = 'SELECT
     u.status
     FROM contact c
     LEFT JOIN contact_to_user ctu ON c.contact_serial = ctu.contact_serial AND ctu.deleted_flag = 0
-    LEFT JOIN user u ON ctu.contat_to_user_serial = u.user_serial AND u.deleted_flag = 0
+    LEFT JOIN user u ON ctu.contact_to_user_serial = u.user_serial AND u.deleted_flag = 0
     WHERE c.subscriber_serial ="' . $subscriber_serial . '" 
     AND c.deleted_flag = 0';
 

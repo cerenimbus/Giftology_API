@@ -132,7 +132,7 @@ debug($authorization_sql);
 
 // Excute and check for success
 $authorization_result=mysqli_query($mysqli_link,$authorization_sql);
-if ( mysqli_error( $authorization_sql)) {
+if ( mysqlerr( $authorization_sql)) {
     exit;
 }
 $authorization_row= mysqli_fetch_array( $authorization_result);

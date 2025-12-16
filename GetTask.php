@@ -124,8 +124,10 @@ $current_mobile_version = get_setting("system","current_mobile_version");
 
 // -------------------------
 // Retrieve user info from authorization code
-$authorization_sql = 'select * from authorization_code join user on authorization_code.user_serial = user.user_serial join subscriber on user.subscriber_serial = subscriber.subscriber_serial '
-    .'where authorization_code.deleted_flag=0 and authorization_code.authorization_code="' . $authorization_code . '"';
+$authorization_sql = 'SELECT * FROM authorization_code 
+                      JOIN user ON authorization_code.user_serial = user.user_serial 
+                      WHERE user.deleted_flag = 0 
+                      AND authorization_code.authorization_code = "' . $authorization_code . '"';
 debug($authorization_sql);
 
 // Excute and check for success

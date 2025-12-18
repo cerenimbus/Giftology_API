@@ -20,6 +20,7 @@
 //       12/08/25 JE - Updated API for live server
 //       12/09/25 JE - fixed minor issues for testing
 //       12/16/25 JE - fixed sql issues for testing
+//       12/18/25 JE - Added authorization_sql
 
 
 $debugflag = false;
@@ -152,8 +153,43 @@ $current_mobile_version = get_setting("system","current_mobile_version");
 }
 
 // Retrieve user info from authorization code
-$sql = 'select * from authorization_code join user on authorization_code.user_serial = user.user_serial where user.deleted_flag=0 and authorization_code.authorization_code="' . $authorization_code . '"';
-debug("get the code: " . $sql);
+$authorization_sql = 'select * from authorization_code 
+                      join user on authorization_code.user_serial = user.user_serial 
+                      where user.deleted_flag=0 
+                      and authorization_code.authorization_code="' . $authorization_code . '"';
+
+debug($authorization_sql);
+
+// Excute and check for success
+$authorization_result=mysqli_query($mysqli_link,$authorization_sql);
+if ( mysqlerr( $authorization_sql)) {
+
+    exit;
+
+}
+
+$authorization_row= mysqli_fetch_array( $authorization_result);
+$authorization_row_count = mysqli_num_rows($authorization_result);
+//-------------------------------------
+
+// If no authorization code is returned, give an error code indicating it was not found
+debug( "check for code found");
+
+debug($authorization_row['authorization_code']." = ". $authorization_code  );
+
+if ( $authorization_row['authorization_code']!= $authorization_code OR  $authorization_row_count==0 ){
+
+    // RKG 12/8/25 return error "invalid authorization code" if not found
+
+    $output = "<ResultInfo>
+
+<ErrorNumber>202</ErrorNumber>
+<Result>Fail</Result>
+<Message>".get_text("rrservice", "_err202a")."</Message>
+</ResultInfo>";
+send_output($output);
+    exit;
+}
 
 // Execute the insert and check for success
 $result = mysqli_query($mysqli_link, $sql);

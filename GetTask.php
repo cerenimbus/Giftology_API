@@ -20,6 +20,8 @@
 //          12/08/25 fixed api
 //          12/09/25 fixing sql statement
 //          12/11/25 added stub after validation
+//          12/15/25 adding authorize validation
+//          12/16/25 testing authorize validation
 //***************************************************************
 
 $debugflag = false;

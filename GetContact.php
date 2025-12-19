@@ -92,23 +92,23 @@ $requestDate   ."<br>".
 'Hash '. $hash  			."<br>"
 );
 
-// // STUB: Return only ONE contact to simulate the specific query
-// $output = '<ResultInfo>
-//   <ErrorNumber>0</ErrorNumber>
-//   <Result>Success</Result>
-//   <Message>Single Contact retrieved (STUB)</Message>
-//   <Contacts>
-//     <Contact>
-//       <Name>James E</Name>
-//       <Serial>' . ($target_contact_serial ? $target_contact_serial : "1001") . '</Serial>
-//       <Phone>+1 801-555-1001</Phone>
-//       <Status>Active</Status>
-//     </Contact>
-//   </Contacts>
-// </ResultInfo>';
+// STUB: Return only ONE contact to simulate the specific query
+$output = '<ResultInfo>
+  <ErrorNumber>0</ErrorNumber>
+  <Result>Success</Result>
+  <Message>Single Contact retrieved (STUB)</Message>
+  <Contacts>
+    <Contact>
+      <Name>James E</Name>
+      <Serial>' . ($target_contact_serial ? $target_contact_serial : "1001") . '</Serial>
+      <Phone>+1 801-555-1001</Phone>
+      <Status>Active</Status>
+    </Contact>
+  </Contacts>
+</ResultInfo>';
 
-// send_output($output);
-// exit;
+send_output($output);
+exit;
 
 // Check the security key
 // GENIE 04/22/14 - change: echo xml to call send_output function

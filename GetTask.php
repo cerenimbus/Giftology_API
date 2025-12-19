@@ -219,6 +219,7 @@ if (!$task) {
         <Message>No task found</Message>
     </ResultInfo>";
     send_output($output);
+    exit;
 }
 
 //-------------------------------------

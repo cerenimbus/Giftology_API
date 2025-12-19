@@ -192,11 +192,6 @@ send_output($output);
 // send_output($output);
 // exit;
 
-
-send_output($output);
-exit;
-
-
 $authorization_row = mysqli_fetch_assoc($result);
 
 $user_serial = $authorization_row["user_serial"];

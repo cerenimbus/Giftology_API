@@ -22,6 +22,7 @@
 //          12/11/25 added stub after validation
 //          12/15/25 adding authorize validation
 //          12/16/25 testing authorize validation
+//          12/19/25 remove stub and enable real DB response for GetTask
 //***************************************************************
 
 $debugflag = false;
@@ -158,22 +159,21 @@ send_output($output);
 }
 
 // // ALC 10/29/25 THIS IS A SAMPLE STUB. The purpose is to always return a successful message, for testing
-$output = '<ResultInfo>
-    <ErrorNumber>0</ErrorNumber>
-    <Result>Success</Result>
-    <Message>Stub single task (sample data)</Message>
-    <Task>
-        <Name>System Maintenance</Name>
-        <Serial>1003</Serial>
-        <Contact>IT Department</Contact>
-        <Date>10/30/2025</Date>
-        <Status>0</Status>
-    </Task>
-</ResultInfo>';
+// $output = '<ResultInfo>
+//     <ErrorNumber>0</ErrorNumber>
+//     <Result>Success</Result>
+//     <Message>Stub single task (sample data)</Message>
+//     <Task>
+//         <Name>System Maintenance</Name>
+//         <Serial>1003</Serial>
+//         <Contact>IT Department</Contact>
+//         <Date>10/30/2025</Date>
+//         <Status>0</Status>
+//     </Task>
+// </ResultInfo>';
 
-send_output($output);
-exit;
-
+// send_output($output);
+// exit;
 
 $authorization_row = mysqli_fetch_assoc($result);
 

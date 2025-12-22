@@ -192,9 +192,10 @@ send_output($output);
 // send_output($output);
 // exit;
 
-$authorization_row = mysqli_fetch_assoc($result);
+$authorization_row = mysqli_fetch_assoc($authorization_result);
 
 $user_serial = $authorization_row["user_serial"];
+$subscriber_serial = $authorization_row["subscriber_serial"];
 
 
 // $sql = 'SELECT *, CONCAT(contact.first_name, " ", contact.last_name) AS contact_name

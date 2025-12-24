@@ -145,7 +145,7 @@ if ( $current_mobile_version > $mobile_version){
 
 //--------------------------------------------------
 // lookup the username and password
-$sql= 'select * from user join subscriber on subscriber.subscriber_serial = user.subscriber_serial where email="' .
+$sql= 'select * from user left join subscriber on subscriber.subscriber_serial = user.subscriber_serial where email="' .
      $username. '" and password="' .$password. '" and status<>"Inactive" and user.deleted_flag=0';
 debug("check the code: " . $sql);
 
@@ -196,7 +196,7 @@ if($rows==1) {
 <Message>". get_text("vcservice", "_err105")."</Message>
 </ResultInfo>";
 	//RKG 1/29/2020 New field of $log_comment allows the error message to be written to the web log
-	$log_comment .= " Not found ". $device_ID;
+	$log_comment .= " Not found ". $sql;
 	send_output($output);
 	exit;
 }

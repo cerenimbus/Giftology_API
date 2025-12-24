@@ -116,7 +116,6 @@ $output = '<ResultInfo>
 </Contact>
 </ResultInfo>';
 
-// JE 11/12/25 immediately return stub data for testing without validation
 send_output($output);
 
 ?>

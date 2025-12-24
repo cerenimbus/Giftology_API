@@ -19,6 +19,9 @@
 //       12/06/25 JE - Revise sql query to retrieve a single contact of the user.
 //       12/08/25 JE - Updated API for live server
 //       12/09/25 JE - fixed minor issues for testing
+//       12/16/25 JE - fixed sql issues for testing
+//       12/18/25 JE - Added authorization_sql
+
 
 $debugflag = false;
 
@@ -91,32 +94,32 @@ $requestDate   ."<br>".
 'Hash '. $hash  			."<br>"
 );
 
-// // STUB: Return only ONE contact to simulate the specific query
-// $output = '<ResultInfo>
-//   <ErrorNumber>0</ErrorNumber>
-//   <Result>Success</Result>
-//   <Message>Contact list retrieved successfully (STUB)</Message>
-//   <Contacts>
-//     <Contact>
-//       <Name>James E</Name>
-//       <Serial>1001</Serial>
-//       <Status>Active</Status>
-//     </Contact>
-//     <Contact>
-//       <Name>Alfred C</Name>
-//       <Serial>1002</Serial>
-//       <Status>Active</Status>
-//     </Contact>
-//     <Contact>
-//       <Name>Janvel A</Name>
-//       <Serial>1003</Serial>
-//       <Status>Active</Status>
-//     </Contact>
-//   </Contacts>
-// </ResultInfo>';
+// STUB: Return only ONE contact to simulate the specific query
+$output = '<ResultInfo>
+  <ErrorNumber>0</ErrorNumber>
+  <Result>Success</Result>
+  <Message>Contact list retrieved successfully (STUB)</Message>
+  <Contacts>
+    <Contact>
+      <Name>James E</Name>
+      <Serial>1001</Serial>
+      <Status>Active</Status>
+    </Contact>
+    <Contact>
+      <Name>Alfred C</Name>
+      <Serial>1002</Serial>
+      <Status>Active</Status>
+    </Contact>
+    <Contact>
+      <Name>Janvel A</Name>
+      <Serial>1003</Serial>
+      <Status>Active</Status>
+    </Contact>
+  </Contacts>
+</ResultInfo>';
 
-// send_output($output);
-// exit;
+send_output($output);
+exit;
 
 
 // Check the security key
@@ -150,8 +153,43 @@ $current_mobile_version = get_setting("system","current_mobile_version");
 }
 
 // Retrieve user info from authorization code
-$sql = 'select * from authorization_code join user on authorization_code.user_serial = user.user_serial where user.deleted_flag=0 and authorization_code.authorization_code="' . $authorization_code . '"';
-debug("get the code: " . $sql);
+$authorization_sql = 'select * from authorization_code 
+                      join user on authorization_code.user_serial = user.user_serial 
+                      where user.deleted_flag=0 
+                      and authorization_code.authorization_code="' . $authorization_code . '"';
+
+debug($authorization_sql);
+
+// Excute and check for success
+$authorization_result=mysqli_query($mysqli_link,$authorization_sql);
+if ( mysqlerr( $authorization_sql)) {
+
+    exit;
+
+}
+
+$authorization_row= mysqli_fetch_array( $authorization_result);
+$authorization_row_count = mysqli_num_rows($authorization_result);
+//-------------------------------------
+
+// If no authorization code is returned, give an error code indicating it was not found
+debug( "check for code found");
+
+debug($authorization_row['authorization_code']." = ". $authorization_code  );
+
+if ( $authorization_row['authorization_code']!= $authorization_code OR  $authorization_row_count==0 ){
+
+    // RKG 12/8/25 return error "invalid authorization code" if not found
+
+    $output = "<ResultInfo>
+
+<ErrorNumber>202</ErrorNumber>
+<Result>Fail</Result>
+<Message>".get_text("rrservice", "_err202a")."</Message>
+</ResultInfo>";
+send_output($output);
+    exit;
+}
 
 // Execute the insert and check for success
 $result = mysqli_query($mysqli_link, $sql);
@@ -180,7 +218,7 @@ $sql = 'SELECT
     u.status
     FROM contact c
     LEFT JOIN contact_to_user ctu ON c.contact_serial = ctu.contact_serial AND ctu.deleted_flag = 0
-    LEFT JOIN user u ON ctu.user_serial = u.user_serial AND u.deleted_flag = 0
+    LEFT JOIN user u ON ctu.contact_to_user_serial = u.user_serial AND u.deleted_flag = 0
     WHERE c.subscriber_serial ="' . $subscriber_serial . '" 
     AND c.deleted_flag = 0';
 

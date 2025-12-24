@@ -20,6 +20,9 @@
 //          12/08/25 fixed api
 //          12/09/25 fixing sql statement
 //          12/11/25 added stub after validation
+//          12/15/25 adding authorize validation
+//          12/16/25 testing authorize validation
+//          12/19/25 remove stub and enable real DB response for GetTask
 //***************************************************************
 
 $debugflag = false;
@@ -124,8 +127,10 @@ $current_mobile_version = get_setting("system","current_mobile_version");
 
 // -------------------------
 // Retrieve user info from authorization code
-$authorization_sql = 'select * from authorization_code join user on authorization_code.user_serial = user.user_serial join subscriber on user.subscriber_serial = subscriber.subscriber_serial '
-    .'where authorization_code.deleted_flag=0 and authorization_code.authorization_code="' . $authorization_code . '"';
+$authorization_sql = 'SELECT * FROM authorization_code 
+                      JOIN user ON authorization_code.user_serial = user.user_serial 
+                      WHERE user.deleted_flag = 0 
+                      AND authorization_code.authorization_code = "' . $authorization_code . '"';
 debug($authorization_sql);
 
 // Excute and check for success
@@ -154,26 +159,26 @@ send_output($output);
 }
 
 // // ALC 10/29/25 THIS IS A SAMPLE STUB. The purpose is to always return a successful message, for testing
-$output = '<ResultInfo>
-    <ErrorNumber>0</ErrorNumber>
-    <Result>Success</Result>
-    <Message>Stub single task (sample data)</Message>
-    <Task>
-        <Name>System Maintenance</Name>
-        <Serial>1003</Serial>
-        <Contact>IT Department</Contact>
-        <Date>10/30/2025</Date>
-        <Status>0</Status>
-    </Task>
-</ResultInfo>';
+// $output = '<ResultInfo>
+//     <ErrorNumber>0</ErrorNumber>
+//     <Result>Success</Result>
+//     <Message>Stub single task (sample data)</Message>
+//     <Task>
+//         <Name>System Maintenance</Name>
+//         <Serial>1003</Serial>
+//         <Contact>IT Department</Contact>
+//         <Date>10/30/2025</Date>
+//         <Status>0</Status>
+//     </Task>
+// </ResultInfo>';
 
-send_output($output);
-exit;
+// send_output($output);
+// exit;
 
-
-$authorization_row = mysqli_fetch_assoc($result);
+$authorization_row = mysqli_fetch_assoc($authorization_result);
 
 $user_serial = $authorization_row["user_serial"];
+$subscriber_serial = $authorization_row["subscriber_serial"];
 
 //-------------------------------------
 // FETCH A SINGLE TASK BY SERIAL
@@ -215,6 +220,7 @@ if (!$task) {
         <Message>No task found</Message>
     </ResultInfo>";
     send_output($output);
+    exit;
 }
 
 //-------------------------------------

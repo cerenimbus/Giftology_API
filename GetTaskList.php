@@ -20,6 +20,9 @@
 //          12/08/25 fixed api
 //          12/09/25 fixing sql statement
 //          12/11/25 added stub after validation
+//          12/15/25 adding authorize validation
+//          12/16/25 Testing authorize validation
+//          12/19/25 remove stub and enable real DB response for GetTask
 //***************************************************************
 
 $debugflag = false;
@@ -125,8 +128,10 @@ $current_mobile_version = get_setting("system","current_mobile_version");
 
 // -------------------------
 // Retrieve user info from authorization code
-$authorization_sql = 'select * from authorization_code join user on authorization_code.user_serial = user.user_serial join subscriber on user.subscriber_serial = subscriber.subscriber_serial '
-    .'where authorization_code.deleted_flag=0 and authorization_code.authorization_code="' . $authorization_code . '"';
+$authorization_sql = 'SELECT * FROM authorization_code 
+                      JOIN user ON authorization_code.user_serial = user.user_serial 
+                      WHERE user.deleted_flag = 0 
+                      AND authorization_code.authorization_code = "' . $authorization_code . '"';
 debug($authorization_sql);
 
 // Excute and check for success
@@ -143,7 +148,7 @@ debug( "check for code found");
 debug($authorization_row['authorization_code']." = ". $authorization_code  );
 
  
-if ( $authorization_row['authorization_code']!= $authorization_code OR  $authorization_row_count==0 ){
+if ( $authorization_row['authorization_code']!= $authorization_code OR $authorization_row_count==0 ){
     // RKG 12/8/25 return error "invalid authorization code" if not found
     $output = "<ResultInfo>
 <ErrorNumber>202</ErrorNumber>
@@ -154,43 +159,43 @@ send_output($output);
     exit;
 }
 
-// // ALC 10/29/25 THIS IS A SAMPLE STUB. The purpose is to always return a successful message, for testing
-$output = '<ResultInfo>
-       <ErrorNumber>0</ErrorNumber>
-       <Result>Success</Result>
-       <Message>Stub Task list (sample data)</Message>
-       <Selections>
-           <Task>
-               <Name>Inventory Check</Name>
-               <Serial>1001</Serial>
-               <Contact>Warehouse A</Contact>
-               <Date>10/29/2025</Date>
-               <Status>0</Status>
-           </Task>
-           <Task>
-               <Name>Delivery Dispatch</Name>
-               <Serial>1002</Serial>
-               <Contact>Stub Employee Name</Contact>
-               <Date>10/29/2025</Date>
-               <Status>1</Status>
-           </Task>
-           <Task>
-               <Name>System Maintenance</Name>
-               <Serial>1003</Serial>
-               <Contact>IT Department</Contact>
-               <Date>10/30/2025</Date>
-               <Status>0</Status>
-           </Task>
-       </Selections>
-   </ResultInfo>';
+// ALC 10/29/25 THIS IS A SAMPLE STUB. The purpose is to always return a successful message, for testing
+// $output = '<ResultInfo>
+//       <ErrorNumber>0</ErrorNumber>
+//       <Result>Success</Result>
+//       <Message>Stub Task list (sample data)</Message>
+//       <Selections>
+//           <Task>
+//               <Name>Inventory Check</Name>
+//               <Serial>1001</Serial>
+//               <Contact>Warehouse A</Contact>
+//                <Date>10/29/2025</Date>
+//                <Status>0</Status>
+//           </Task>
+//           <Task>
+//               <Name>Delivery Dispatch</Name>
+//               <Serial>1002</Serial>
+//               <Contact>Stub Employee Name</Contact>
+//               <Date>10/29/2025</Date>
+//               <Status>1</Status>
+//           </Task>
+//           <Task>
+//               <Name>System Maintenance</Name>
+//               <Serial>1003</Serial>
+//               <Contact>IT Department</Contact>
+//               <Date>10/30/2025</Date>
+//               <Status>0</Status>
+//           </Task>
+//       </Selections>
+//   </ResultInfo>';
 
-send_output($output);
-exit;
+// send_output($output);
+// exit;
 
-
-$authorization_row = mysqli_fetch_assoc($result);
+$authorization_row = mysqli_fetch_assoc($authorization_result);
 
 $user_serial = $authorization_row["user_serial"];
+$subscriber_serial = $authorization_row["subscriber_serial"];
 
 
 // $sql = 'SELECT *, CONCAT(contact.first_name, " ", contact.last_name) AS contact_name

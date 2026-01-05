@@ -23,6 +23,7 @@
 //          12/15/25 adding authorize validation
 //          12/16/25 Testing authorize validation
 //          12/19/25 remove stub and enable real DB response for GetTask
+//          1/05/25  fix api
 //***************************************************************
 
 $debugflag = false;
@@ -191,8 +192,6 @@ send_output($output);
 
 // send_output($output);
 // exit;
-
-$authorization_row = mysqli_fetch_assoc($authorization_result);
 
 $user_serial = $authorization_row["user_serial"];
 $subscriber_serial = $authorization_row["subscriber_serial"];

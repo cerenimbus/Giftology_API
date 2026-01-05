@@ -194,34 +194,34 @@ send_output($output);
 // exit;
 
 $user_serial = $authorization_row["user_serial"];
-$subscriber_serial = $authorization_row["subscriber_serial"];
 
 
-// $sql = 'SELECT *, CONCAT(contact.first_name, " ", contact.last_name) AS contact_name
-//         FROM event e
-//         JOIN workflow_detail wd ON e.workflow_detail_serial = wd.workflow_detail_serial
-//         JOIN workflow w ON wd.workflow_serial = w.workflow_serial
-//         LEFT JOIN workflow_detail_type wdt ON wd.workflow_detail_type_serial = wdt.workflow_detail_type_serial
-//         LEFT JOIN contact ON e.contact_serial = contact.contact_serial
-//         WHERE e.contact_serial IN (
-//             SELECT contact_serial FROM contact_to_user WHERE user_serial = ' . intval($user_serial) . '
-//         )
-//         AND e.deleted_flag = 0
-//         ORDER BY e.event_target_date ASC';
-$sql = 'SELECT *, 
-        CONCAT(contact.first_name, " ", contact.last_name) AS contact_name
-        FROM event e
-        JOIN workflow_detail wd ON e.workflow_detail_serial = wd.workflow_detail_serial
-        JOIN workflow w ON wd.workflow_serial = w.workflow_serial
-        LEFT JOIN workflow_detail_type wdt ON wd.workflow_detail_type_serial = wdt.workflow_detail_type_serial
-        LEFT JOIN contact ON e.contact_serial = contact.contact_serial
-        LEFT JOIN user u ON contact.subscriber_serial = u.subscriber_serial
-        WHERE u.user_serial = ' . intval($user_serial) . '
-        AND e.deleted_flag = 0
-        ORDER BY e.event_target_date ASC';
+
+ $sql = 'SELECT *, CONCAT(contact.first_name, " ", contact.last_name) AS contact_name
+         FROM event e
+         JOIN workflow_detail wd ON e.workflow_detail_serial = wd.workflow_detail_serial
+         JOIN workflow w ON wd.workflow_serial = w.workflow_serial
+         LEFT JOIN workflow_detail_type wdt ON wd.workflow_detail_type_serial = wdt.workflow_detail_type_serial
+         LEFT JOIN contact ON e.contact_serial = contact.contact_serial
+         WHERE e.contact_serial IN (
+             SELECT contact_serial FROM contact_to_user WHERE user_serial = ' . intval($user_serial) . '
+         )
+         AND e.deleted_flag = 0
+         ORDER BY e.event_target_date ASC';
 
 debug("Task list SQL: " . $sql);
 
+// $sql = 'SELECT *, 
+//        CONCAT(contact.first_name, " ", contact.last_name) AS contact_name
+//        FROM event e
+//        JOIN workflow_detail wd ON e.workflow_detail_serial = wd.workflow_detail_serial
+//        JOIN workflow w ON wd.workflow_serial = w.workflow_serial
+//        LEFT JOIN workflow_detail_type wdt ON wd.workflow_detail_type_serial = wdt.workflow_detail_type_serial
+//        LEFT JOIN contact ON e.contact_serial = contact.contact_serial
+//        LEFT JOIN user u ON contact.subscriber_serial = u.subscriber_serial
+//        WHERE u.user_serial = ' . intval($user_serial) . '
+//        AND e.deleted_flag = 0
+//        ORDER BY e.event_target_date ASC';
 
 $result = mysqli_query($mysqli_link, $sql);
 // Rkg if error, write out API response.

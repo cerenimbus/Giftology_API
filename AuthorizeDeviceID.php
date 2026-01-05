@@ -101,7 +101,7 @@ $sql= 'select * from user where deleted_flag=0 AND email="' .
      $username. '" and password="' .$password. '"' ;
 debug("get the user: " . $sql);
 
-// Execute the insert and check for success
+// Execute and check for success
 $result=mysqli_query($mysqli_link,$sql);
 if ( mysqli_error($mysqli_link)) {
 	debug("line q144 sql error ". mysqli_error($mysqli_link));
@@ -118,7 +118,7 @@ debug("user serial: ".  $user_serial);
 debug("Security Code: ". $security_code);
 
 //RKG 11/12/24  make a back door for apple testers. Return unauthorized if not match
-if (($row_count>0) OR ( $user_row["email"]=="kirbystuff1@comcast.net" AND $security_code="999999") OR ( $user_row["security_code"]==$security_code)
+if (($row_count>0) OR ( $user_row["email"]=="kirbystuff1@comcast.net" AND $security_code=="999999") OR ( $user_row["security_code"]==$security_code)
 	OR $security_code=="999999" ){
 	// the code is good - continue
 } else {
@@ -127,6 +127,7 @@ if (($row_count>0) OR ( $user_row["email"]=="kirbystuff1@comcast.net" AND $secur
 <Result>Fail</Result>
 <Message>".get_text("vcservice", "_err203")."</Message>
 </ResultInfo>";
+	$log_comment= "130 Not Found " . $sql;
 	send_output($output);
 	exit;
 }
@@ -169,11 +170,12 @@ while($loop_flag ) {
 		$sql= 'insert authorization_code set authorization_code.authorization_code="' . $authorization_code. '", user_serial="'. $user_serial. '"';
 		debug("save the code: " . $sql);
 
-		// Execute the insert and check for success
+		// Execute and check for success
 		$result=mysqli_query($mysqli_link,$sql);
 		if ( mysqli_error($mysqli_link) ) {
 			debug("line 155 sql error ".$sql."   ". mysqli_error($mysqli_link));
 			debug("exit 157");
+			$log_comment= "178 Not Found " . $sql;
 			exit;
 		}
 
@@ -200,6 +202,7 @@ if ( mysqli_error($mysqli_link) ) {
 <Result>Fail</Result>
 <Message>".get_text("vcservice", "_err103a")." ". $update_sql ." ". mysqli_error($mysqli_link)."</Message>
 </ResultInfo>";
+$log_comment= "217 Not Found " . $sql;
 	send_output($output);
 	exit;
 }

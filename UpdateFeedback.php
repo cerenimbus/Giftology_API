@@ -1,153 +1,235 @@
 <?php
-/*****************************************************************
- Copyright Cerenimbus Inc
- ALL RIGHTS RESERVED. Proprietary and confidential
-
- Description:
-    UpdateFeedback.php
-
- Called by:
-    Giftology Mobile App / VCService
-
- Author: Karl Matthew Linao
- Date:   11/15/25
- History:
-    10/19/2025   KML - Start
-    10/28/2025   KML - Stubs
-    11/14/2025   KML - Modified logic to update feedback based on Giftology DD.
-    11/15/2025   KML - Converted to Stub version for offline testing per Giftology VCService format.
-    11/28/2025   KML - Reviewed and cleaned up comments. change from rrservice to vcservice.
-    12/09/2025   KML - Added full security hash validation before stub output.
- ******************************************************************/
+//***************************************************************
+// Cerenimbus Inc.
+// 1175 N 910 E, Orem UT 84097
+// THIS IS NOT OPEN SOURCE. DO NOT USE WITHOUT PERMISSION
+//***************************************************************
+// Copyright Cerenimbus
+// ALL RIGHTS RESERVED. Proprietary and confidential
+//***************************************************************
+//
+// File: UpdateTask.php
+// Description: Updates the status flag for a user task after validating
+//              security hash and verifying authorization code.
+//
+// Called by: Giftology Mobile App / VCService
+//
+// Author: Karl Matthew Linao
+// Created: 11/28/2025
+//
+// History:
+// 11/28/2025  KML - Created based on UpdateFeedback stub.
+// 12/09/2025  KML - Added full security hash validation.
+// 12/15/2025  KML - Added authorization code database verification.
+// 01/06/2026  KML - Cleaned logic flow and improved stability.
+//***************************************************************
 
 //---------------------------------------------------------------
-// Initialization & configuration
+// Initialization
 //---------------------------------------------------------------
-require_once('send_output.php');
 $debugflag = false;
 $suppress_javascript = true;
 
+if (isset($_REQUEST["debugflag"])) {
+    $debugflag = true;
+}
+
 //---------------------------------------------------------------
-// File includes
+// Include required function files
 //---------------------------------------------------------------
-if (file_exists('ccu_include/ccu_function.php'))
+if (file_exists('ccu_include/ccu_function.php')) {
     require_once('ccu_include/ccu_function.php');
-else if (file_exists('../ccu_include/ccu_function.php'))
+} else if (file_exists('../ccu_include/ccu_function.php')) {
     require_once('../ccu_include/ccu_function.php');
-else {
-    echo "Missing ccu_function.php. Contact programmer.";
+} else {
+    echo "Cannot find required file ccu_function.php. Contact programmer.";
     exit;
 }
 
-if (file_exists('ccu_include/ccu_password_security.php'))
-    require_once('ccu_include/ccu_password_security.php');
-else if (file_exists('../ccu_include/ccu_password_security.php'))
-    require_once('../ccu_include/ccu_password_security.php');
-else {
-    echo "Missing ccu_password_security.php. Contact programmer.";
+if (file_exists('send_output.php')) {
+    require_once('send_output.php');
+} else if (file_exists('../ccu_include/send_output.php')) {
+    require_once('../ccu_include/send_output.php');
+} else {
+    echo "Cannot find required file send_output.php. Contact programmer.";
     exit;
 }
 
 //---------------------------------------------------------------
-// Logging
+// Logging (for internal debug log only)
 //---------------------------------------------------------------
-debug("UpdateFeedback called");
-
-$text = var_export($_REQUEST, true);
-$log_text = str_replace('"', "'", $text);
-debug("Web log: " . $log_text);
+debug("UpdateTask called");
+debug("Incoming request: " . var_export($_REQUEST, true));
 
 //---------------------------------------------------------------
-// Retrieve parameters
+// Retrieve parameters (YOUR EXACT REQUIRED LINES)
 //---------------------------------------------------------------
-$deviceID = $_REQUEST["DeviceID"] ?? "";
-$requestDate = $_REQUEST["Date"] ?? "";
-$key = $_REQUEST["Key"] ?? "";
-$name = $_REQUEST["Name"] ?? "";
-$email = $_REQUEST["Email"] ?? "";
-$phone = $_REQUEST["Phone"] ?? "";
-$response = $_REQUEST["Response"] ?? "0";
-$update = $_REQUEST["Update"] ?? "0";
-$comment = $_REQUEST["Comment"] ?? "";
-$language = $_REQUEST["Language"] ?? "";
-$authorization_code = $_REQUEST["AC"] ?? "";
+$deviceID      = $_REQUEST["DeviceID"] ?? "";
+$requestDate   = $_REQUEST["Date"] ?? "";
+$key           = $_REQUEST["Key"] ?? "";
+$authorization = $_REQUEST["AC"] ?? "";
+$language      = $_REQUEST["Language"] ?? "";
+$mobileVersion = $_REQUEST["MobileVersion"] ?? "";
+$taskID        = $_REQUEST["Task"] ?? "";
+$status        = $_REQUEST["Status"] ?? ""; // 0 or 1
 
 //---------------------------------------------------------------
-// Language Setup
+// Setup language for messages
 //---------------------------------------------------------------
 set_language($language);
 
 //---------------------------------------------------------------
-// SECURITY CHECK (ADDED)
-// Expected formula: sha1(DeviceID + Date + Authorization Code)
+// Security hash validation
+// Formula: sha1(DeviceID + Date + AuthorizationCode)
 //---------------------------------------------------------------
-$expectedKey = sha1($deviceID . $requestDate . $authorization_code);
+$expectedKey = sha1($deviceID . $requestDate . $authorization);
 
-debug("DeviceID: $deviceID");
-debug("Date: $requestDate");
-debug("Received Key: $key");
-debug("Expected Key: $expectedKey");
+debug("ExpectedKey: $expectedKey");
+debug("ReceivedKey: $key");
 
-// If key mismatched → FAIL immediately
 if ($expectedKey !== $key) {
-    debug("Security Hash mismatch - Request Rejected");
 
     $output = "<ResultInfo>
-        <ErrorNumber>102</ErrorNumber>
-        <Result>Fail</Result>
-        <Message>" . get_text("vcservice", "_err102a") . "</Message>
-    </ResultInfo>";
+    <ErrorNumber>102</ErrorNumber>
+    <Result>Fail</Result>
+    <Message>" . get_text("vcservice", "_err102a") . "</Message>
+</ResultInfo>";
 
     send_output($output);
     exit;
 }
 
 //---------------------------------------------------------------
-// STUB MODE (Always returns success after security check)
+// Mobile version validation
 //---------------------------------------------------------------
-$output = "<ResultInfo>
-    <ErrorNumber>0</ErrorNumber>
-    <Result>Success</Result>
-    <Message>Security code accepted</Message>
-    <Auth>this is a test authorization code for testing only</Auth>
+$current_mobile_version = get_setting("system", "current_mobile_version");
+debug("current_mobile_version = " . $current_mobile_version);
+
+if ($current_mobile_version > $mobileVersion) {
+
+    $output = "<ResultInfo>
+    <ErrorNumber>106</ErrorNumber>
+    <Result>Fail</Result>
+    <Message>" . get_text("vcservice", "_err106") . "</Message>
 </ResultInfo>";
 
-send_output($output);
-exit;
+    send_output($output);
+    exit;
+}
 
 //---------------------------------------------------------------
-// REAL MODE (Not used in stub but retained for future activation)
+// Validate authorization code against database
 //---------------------------------------------------------------
-$update_sql = "INSERT INTO feedback SET 
-    feedback_device_id='" . mysqli_real_escape_string($mysqli_link, $deviceID) . "',
-    feedback_name='" . mysqli_real_escape_string($mysqli_link, $name) . "',
-    feedback_email='" . mysqli_real_escape_string($mysqli_link, $email) . "',
-    feedback_phone='" . mysqli_real_escape_string($mysqli_link, $phone) . "',
-    feedback_source='Mobile',
-    reply_requested_flag='" . mysqli_real_escape_string($mysqli_link, $response) . "',
-    opt_in_flag='" . mysqli_real_escape_string($mysqli_link, $update) . "',
-    comment='" . mysqli_real_escape_string($mysqli_link, $comment) . "',
-    created=NOW()";
+$auth_sql = "
+SELECT user_serial 
+FROM authorization_code 
+WHERE deleted_flag = 0
+AND authorization_code = '" . mysqli_real_escape_string($mysqli_link, $authorization) . "'
+";
+
+debug("Authorization SQL: $auth_sql");
+
+$auth_result = mysqli_query($mysqli_link, $auth_sql);
+
+if (mysqli_error($mysqli_link)) {
+
+    $err = mysqli_error($mysqli_link);
+
+    $output = "<ResultInfo>
+    <ErrorNumber>201</ErrorNumber>
+    <Result>Fail</Result>
+    <Message>Authorization validation database error: $err</Message>
+</ResultInfo>";
+
+    send_output($output);
+    exit;
+}
+
+if (mysqli_num_rows($auth_result) == 0) {
+
+    $output = "<ResultInfo>
+    <ErrorNumber>202</ErrorNumber>
+    <Result>Fail</Result>
+    <Message>" . get_text("vcservice", "_err202a") . "</Message>
+</ResultInfo>";
+
+    send_output($output);
+    exit;
+}
+
+$auth_row = mysqli_fetch_assoc($auth_result);
+$userSerial = intval($auth_row["user_serial"]);
+
+//---------------------------------------------------------------
+// Input validation
+//---------------------------------------------------------------
+if ($taskID === "" || !is_numeric($taskID)) {
+
+    $output = "<ResultInfo>
+    <ErrorNumber>104</ErrorNumber>
+    <Result>Fail</Result>
+    <Message>Invalid Task ID</Message>
+</ResultInfo>";
+
+    send_output($output);
+    exit;
+}
+
+if ($status !== "0" && $status !== "1") {
+
+    $output = "<ResultInfo>
+    <ErrorNumber>105</ErrorNumber>
+    <Result>Fail</Result>
+    <Message>Invalid task status. Must be 0 or 1.</Message>
+</ResultInfo>";
+
+    send_output($output);
+    exit;
+}
+
+//---------------------------------------------------------------
+// Insert or update user task status (ORIGINAL INTENT)
+//---------------------------------------------------------------
+$update_sql = "
+INSERT INTO user_tasks
+SET
+    device_id = '" . mysqli_real_escape_string($mysqli_link, $deviceID) . "',
+    task_serial = '" . mysqli_real_escape_string($mysqli_link, $taskID) . "',
+    status_flag = '" . mysqli_real_escape_string($mysqli_link, $status) . "',
+    mobile_version = '" . mysqli_real_escape_string($mysqli_link, $mobileVersion) . "',
+    updated = NOW()
+ON DUPLICATE KEY UPDATE
+    status_flag = VALUES(status_flag),
+    updated = NOW()
+";
 
 debug("Update SQL: $update_sql");
 
-$update_result = mysqli_query($mysqli_link, $update_sql);
+mysqli_query($mysqli_link, $update_sql);
+
 if (mysqli_error($mysqli_link)) {
-    $error = mysqli_error($mysqli_link);
+
+    $err = mysqli_error($mysqli_link);
+
     $output = "<ResultInfo>
-        <ErrorNumber>103</ErrorNumber>
-        <Result>Fail</Result>
-        <Message>" . get_text("vcservice", "_err103a") . " $error</Message>
-    </ResultInfo>";
+    <ErrorNumber>103</ErrorNumber>
+    <Result>Fail</Result>
+    <Message>Database error: $err</Message>
+</ResultInfo>";
+
     send_output($output);
     exit;
 }
 
+//---------------------------------------------------------------
+// Success Response
+//---------------------------------------------------------------
 $output = "<ResultInfo>
     <ErrorNumber>0</ErrorNumber>
     <Result>Success</Result>
-    <Message>Your feedback has been successfully recorded.</Message>
+    <Message>Task status successfully updated.</Message>
 </ResultInfo>";
+
 send_output($output);
 exit;
 

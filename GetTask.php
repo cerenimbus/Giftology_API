@@ -187,7 +187,7 @@ $user_serial = $authorization_row["user_serial"];
          LEFT JOIN workflow_detail_type wdt ON wd.workflow_detail_type_serial = wdt.workflow_detail_type_serial
          LEFT JOIN contact ON e.contact_serial = contact.contact_serial
          WHERE e.contact_serial IN (
-             SELECT contact_serial FROM contact_to_user WHERE user_serial = ' . intval($user_serial) . '
+             SELECT contact_serial FROM user WHERE user_serial = ' . intval($user_serial) . '
          )
          AND e.deleted_flag = 0
          LIMIT 1';

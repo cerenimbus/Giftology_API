@@ -180,15 +180,16 @@ $user_serial = $authorization_row["user_serial"];
 
 //-------------------------------------
 // FETCH A SINGLE TASK BY SERIAL
- $sql = 'SELECT *, CONCAT(contact.first_name, " ", contact.last_name) AS contact_name
-         FROM event e
-         JOIN workflow_detail wd ON e.workflow_detail_serial = wd.workflow_detail_serial
-         JOIN workflow w ON wd.workflow_serial = w.workflow_serial
-         LEFT JOIN workflow_detail_type wdt ON wd.workflow_detail_type_serial = wdt.workflow_detail_type_serial
-         LEFT JOIN contact ON e.contact_serial = contact.contact_serial
-         WHERE e.contact_serial IN (
-             SELECT contact_serial FROM user WHERE user_serial = ' . intval($user_serial) . '
-         )
+$sql = 'SELECT *, 
+               CONCAT(c.first_name, " ", c.last_name) AS contact_name
+        FROM event e
+        JOIN workflow_detail wd ON e.workflow_detail_serial = wd.workflow_detail_serial
+        JOIN workflow w ON wd.workflow_serial = w.workflow_serial
+        LEFT JOIN workflow_detail_type wdt ON wd.workflow_detail_type_serial = wdt.workflow_detail_type_serial
+        LEFT JOIN contact c ON e.contact_serial = c.contact_serial
+        WHERE e.contact_serial IN (
+            SELECT u.contact_serial FROM user u WHERE u.user_serial = ' . intval($user_serial) . '
+        )
          AND e.deleted_flag = 0
          LIMIT 1';
 

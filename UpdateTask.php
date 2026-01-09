@@ -22,7 +22,8 @@
 // 12/09/2025  KML - Added full security hash validation.
 // 12/15/2025  KML - Added authorization code database verification.
 // 01/06/2026  KML - Cleaned logic flow and improved stability.
-// 01/06/2026  GPT - Inserted proper STUB MODE block for offline testing.
+// 01/06/2026  Inserted proper STUB MODE block for offline testing.
+// 01/10/2026  updated api 
 //***************************************************************
 
 //---------------------------------------------------------------

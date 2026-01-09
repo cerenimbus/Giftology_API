@@ -32,7 +32,7 @@ if ( file_exists( 'ccu_include/ccu_function.php')) {
 }
 
 // this function is used to output the result and to store the result in the log
-debug( "get the send output php");
+debug( "Gift ology get the send output php");
 // be sure we can find the function file for inclusion
 if ( file_exists( 'send_output.php')) {
 	require_once( 'send_output.php');
@@ -116,11 +116,12 @@ debug("Row count: ". $row_count);
 debug("user username: ".  $user_row["user_username"]);
 debug("user serial: ".  $user_serial);
 debug("Security Code: ". $security_code);
+debug("User Code: ". $user_row["security_code"]);
 
 //RKG 11/12/24  make a back door for apple testers. Return unauthorized if not match
 if (($row_count>0) OR ( $user_row["email"]=="kirbystuff1@comcast.net" AND $security_code=="999999") OR ( $user_row["security_code"]==$security_code)
 	OR $security_code=="999999" ){
-	// the code is good - continue
+	debug( "the code is good - continue");
 } else {
 			$output = "<ResultInfo>
 <ErrorNumber>203</ErrorNumber>

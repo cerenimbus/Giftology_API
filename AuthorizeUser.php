@@ -44,6 +44,7 @@ if ( file_exists( "lib/mailer_sendgrid/send_email.php")) {
 } else {
 	if ( file_exists( "../lib/mailer_sendgrid/send_email.php")) {
     	require_once( "../lib/mailer_sendgrid/send_email.php");
+		debug("found mailer file in ../lib/mailer_sendgrid/ ");
 	} else {
         echo "Cannot find required file class.Sendgrid_mail.php.  Please copy this message and email to support@cerenimbus.com.";
         exit;
@@ -166,6 +167,7 @@ if($rows==1) {
 	// we have found one matching record
 	debug("Found the username and password");
 	$log_comment .= " User Found";
+
 	// create the security code
 	$security_code = random_int(100000, 999999);
 
@@ -203,58 +205,47 @@ if($rows==1) {
 
 
 // RKG 10/14/24 we need the settings for the email system
-$setting_array = get_setting_list("system");
-$from_email = 	$setting_array["email_sender_from"] ."@". $setting_array["email_domain"];
-$from_name=     $setting_array["email_from_name"];
-$to_name=      $user_row["first_name"] ." ".$user_row["first_name"];
-$to_email=     $user_row["employee_email"];
-$subject=       "login attempt";
-$email_body=    "The user ". $username. " has tried logging in with password ". $password. " Use Security code: ".$security_code ;
+$from_email = 	$user_row["email_from_email"] ;
+$from_name=     $user_row["email_from_name"];
+$to_name=      $user_row["first_name"] ." ".$user_row["last_name"];
+$to_email=     $user_row["email"];
+$subject=       "ROR Login attempt";
+$email_body=    "Thank you for logging in to the ROR mobile app. Your ROR security code is: ".$security_code ;
 $attachement=   null;
 $message_serial=0;
-$reply_to_email=$setting_array["email_reply_email"];
-$api_key =      $setting_array["sendgrid_API_key"];
-$email_service_name = $setting_array["email_service_name"];
+$reply_to_email= $user_row["email_reply_to_email"];
+$api_key =      $user_row["email_API_key"];
+$email_service_name = "Sendgrid";
 
 debug("call sendemail 127");
-$crewzcontrol_version = $_REQUEST["CrewzControlVersion"];
-$current_crewzcontrol_version = get_setting("system","current_crewzcontrol_version");
-debug("current_crewzcontrol_version = " . $current_crewzcontrol_version );
-
 
 debug("API Key= ".  $api_key);
 // RKG change this is there is ever more than one sender service
 debug("email service name= ".  $email_service_name);
 debug("from email= ". $from_email);
 debug("from name= " . $from_name );
+debug("to email= " . $to_email );
 debug("264 reply to email: ". $reply_to_email);
+debug("subject= " . $subject );
+debug("email bodye= " . $email_body);
 
 // RKG 4/8/25 stop the emails and send sms insteaed
-//$result =send_email($from_email, $to_email, $subject, $email_body, $attachment, null,null, null, $from_name, $to_name, $message_serial,  $reply_to_email, $api_key, $email_service_name );
+$result =send_email($from_email, $to_email, $subject, $email_body, $attachment, null,null, null, $from_name, $to_name, $message_serial,  $reply_to_email, $api_key, $email_service_name );
+debug( "452 ". $to_email. " result ". $result->statusCode());
+if($result->statusCode()==202){
+	debug( "454 Sent: ". $to_email. " result ". $result->statusCode());
+} else {
+	debug( "456 SENDING ERROR: ". $to_email. " result ". $result->statusCode());
+	var_dump( $result);
+}
 
-$message =    "Your Giftology Security Code: ".$security_code ;
-$result = sendSMS($user_row["employee_mobile"], $message);
-debug("271 SMS result");
-
-$attachement=   null;
-// $result = send_email($from_email ,$to_email,$subject,$body,$attachment,'','',$message_log_serial);
-
-// $result = $sendgrid_mail->send_email($from_email,$to_email,$subject,$body,$attachment,'','',$message_log_serial);
-// debug("From email: ".$from_email."-".$to_email."-".$subject."- Body:".$body."- Message Serial:".$message_log_serial."<br/>");
-//$result->statusCode()
-debug("Result status code: ");
-
-
-//if($result->statusCode()==202){
-//	debug( "Sent: ". $to_email);
-//}
 
 // RKG 10/14/24 ----------------------------------------
 $log_comment .=" Success";
 $output = "<ResultInfo>
 <ErrorNumber>0</ErrorNumber>
 <Result>Success</Result>
-<Message>A security code will be sent by text message.</Message>
+<Message>A security code will be sent by email message.</Message>
 <Comp>" . $user_row["company_name"]. "</Comp>
 <Name>" . $to_name. "</Name>
 </ResultInfo>";

@@ -189,6 +189,7 @@ $sql = 'SELECT *,
         LEFT JOIN contact c ON e.contact_serial = c.contact_serial
         LEFT JOIN user u ON c.user_serial = u.user_serial
         WHERE u.user_serial = ' . intval($user_serial) . '
+          AND e.event_serial = ' . intval($task_serial). '
           AND e.deleted_flag = 0
          LIMIT 1';
 

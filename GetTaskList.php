@@ -196,7 +196,7 @@ send_output($output);
 $user_serial = $authorization_row["user_serial"];
 
 $sql = 'SELECT *,
-               CONCAT(c.first_name, " ", c.last_name) AS contact_name,
+               CONCAT(c.first_name, " ", c.last_name) AS contact_name
         FROM event e
         JOIN workflow_detail wd ON e.workflow_detail_serial = wd.workflow_detail_serial
         JOIN workflow w ON wd.workflow_serial = w.workflow_serial

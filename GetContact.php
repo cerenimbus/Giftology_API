@@ -177,22 +177,6 @@ if ( $authorization_row['authorization_code']!= $authorization_code OR  $authori
 send_output($output);
     exit;
 }
-// Execute the insert and check for success
-$result = mysqli_query($mysqli_link, $sql);
-if (mysqli_error($mysqli_link)) {
-    $error =  mysqli_error($mysqli_link);
-    // GENIE 04/22/14 - change: echo xml to call send_output function
-    $output = "<ResultInfo>
-		<ErrorNumber>103</ErrorNumber>
-		<Result>Fail</Result>
-		<Message>" . get_text("rrservice", "_err103a") . " " . $update_sql . " " .  $error . "</Message>
-		</ResultInfo>";
-    debug("Mysql error: " . $error . "  ", $sql);
-    $log_comment =  $error;
-    send_output($output);
-    exit;
-}
-
 
 
 //Retrieve Specific Contact
@@ -202,14 +186,14 @@ $sql = 'SELECT
             c.contact_serial, 
             c.first_name, 
             c.last_name, 
-            u.status
+            c.status
         FROM contact c
-        LEFT JOIN contact_to_user ctu 
-          ON c.contact_serial = ctu.contact_serial 
-          AND ctu.deleted_flag = 0
-        LEFT JOIN user u 
-          ON ctu.contact_to_user_serial = u.user_serial 
-            AND u.deleted_flag = 0
+        -- LEFT JOIN contact_to_user ctu 
+        --   ON c.contact_serial = ctu.contact_serial 
+        --   AND ctu.deleted_flag = 0
+        -- LEFT JOIN user u 
+        --   ON ctu.contact_to_user_serial = u.user_serial 
+        --     AND u.deleted_flag = 0
         WHERE c.subscriber_serial ="' . $subscriber_serial . '" 
         AND c.contact_serial = "' . $target_contact_serial . '"
         AND c.deleted_flag = 0 

@@ -207,7 +207,6 @@ if (mysqli_error($mysqli_link)) {
     exit;
 }
 
-$authorization_row = mysqli_fetch_assoc($result);
 
 $subscriber_serial = $authorization_row["subscriber_serial"] ?? null;
 

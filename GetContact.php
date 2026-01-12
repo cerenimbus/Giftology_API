@@ -193,7 +193,7 @@ if (mysqli_error($mysqli_link)) {
     exit;
 }
 
-$authorization_row = mysqli_fetch_assoc($result);
+
 
 //Retrieve Specific Contact
 $target_contact_serial = mysqli_real_escape_string($mysqli_link, $target_contact_serial);

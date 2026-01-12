@@ -201,11 +201,11 @@ $sql = 'SELECT
         ORDER BY first_name
         LIMIT 1';
 
-// IF a specific serial was requested, append the filter
-if (!empty($target_contact_serial)) {
-  $safe_serial = mysqli_real_escape_string($mysqli_link, $target_contact_serial);
-  $sql .= " AND contact_serial = '$safe_serial'";
-  }
+// // IF a specific serial was requested, append the filter
+// if (!empty($target_contact_serial)) {
+//   $safe_serial = mysqli_real_escape_string($mysqli_link, $target_contact_serial);
+//   $sql .= " AND contact_serial = '$safe_serial'";
+//   }
 
 debug("Contact list SQL: " . $sql);
 

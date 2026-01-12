@@ -182,6 +182,8 @@ send_output($output);
 //Retrieve Specific Contact
 $target_contact_serial = mysqli_real_escape_string($mysqli_link, $target_contact_serial);
 
+$user_serial = $authorization_row["user_serial"] ?? null;
+
 $sql = 'SELECT 
             c.contact_serial, 
             c.first_name, 
@@ -194,7 +196,7 @@ $sql = 'SELECT
         -- LEFT JOIN user u 
         --   ON ctu.contact_to_user_serial = u.user_serial 
         --     AND u.deleted_flag = 0
-        WHERE c.subscriber_serial ="' . $subscriber_serial . '" 
+        WHERE c.user_serial ="' . $user_serial . '" 
         AND c.contact_serial = "' . $target_contact_serial . '"
         AND c.deleted_flag = 0 
         ORDER BY first_name

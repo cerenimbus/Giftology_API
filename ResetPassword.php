@@ -16,6 +16,7 @@
 // History: 10/29/25 initial version created
 //          11/11/25 updated author name, error messages and stub
 //          11/14/25 updated error messages
+//          1/3/26   implemented full reset password functionality, replaced stub with actual logic, and added email notification feature
 //***************************************************************
 
 $debugflag = false;
@@ -58,112 +59,101 @@ debug("ResetPassword");
 
 //-------------------------------------
 // Get the values passed in
-$device_ID = urldecode($_REQUEST["DeviceID"]); // alphanumeric up to 60 characters which uniquely identifies the mobile device (iphone, ipad, etc)
-$requestDate = $_REQUEST["Date"]; // date/time as a string – alphanumeric up to 20 [format: MM/DD/YYYY-HH:mm]
-$authorization_code = $_REQUEST["AC"]; // 40 character authorization code
-$key = $_REQUEST["Key"]; // alphanumeric 40, SHA-1 hash of the device ID + date string (MM/DD/YYYY-HH:mm) + AuthorizationCode
-$password = $_REQUEST["Password"] ?? ''; // new password, minimum 8 characters
-
-// ALC 10/29/25: Longitude and Latitude removed per boss instruction, not used in Giftology app
-// $longitude = $_REQUEST["Longitude"];
-// $latitude = $_REQUEST["Latitude"];
-
-// ALC 10/29/25 THIS IS A SAMPLE STUB. The purpose is to always return a successful message, for testing
-$output = "<ResultInfo>
-    <ErrorNumber>0</ErrorNumber>
-    <Result>Success</Result>
-    <Message>This is a test response from ResetPassword API (Giftology).</Message>
-    <Comp>Cerenimbus Inc.</Comp>
-    <Name>Cerenimbus Employee</Name>
-</ResultInfo>";
-
-send_output($output);
-exit;
-
-
-$hash = sha1($device_ID . $requestDate . $authorization_code);
-
-// make a log entry for this call to the web service
-$text = var_export($_REQUEST, true);
-$test = str_replace(chr(34), "'", $text);
-$log_sql = 'insert web_log SET method="ResetPassword", text="' . $text . '", created="' . date("Y-m-d H:i:s") . '"'; // ALC 10/29/25 updated method name
-debug("Web log: " . $log_sql);
+$device_ID              = urldecode($_REQUEST["DeviceID"]); //URLENCODE THIS VALUE alphanumeric up to 60 characters which uniquely identifies the mobile device (iphone, ipad, etc)
+$requestDate            = $_REQUEST["Date"]; // date/time as a string – alphanumeric up to 20 [format:  MM/DD/YYYY-HH:mm]
+$authorization_code     = $_REQUEST["AC"]; // 40 character authorization code 
+$key                    = $_REQUEST["Key"]; // alphanumeric 40, SHA-1 hash of the device ID + date string (MM/DD/YYYY-HH:mm) +  AuthorizationCode
+$new_password           = $_REQUEST["Password"] ?? ''; // new password minimum 8 characters
 
 //-------------------------------------
-// Security check
+// Hash check
+$hash = sha1($device_ID . $requestDate . $authorization_code);
+
+debug("DeviceID: $device_ID, Date: $requestDate, AC: $authorization_code, Key: $key, Hash: $hash");
+
 if ($hash != $key) {
-    debug("hash error. Key / Hash mismatch");
     $output = "<ResultInfo>
 <ErrorNumber>102</ErrorNumber>
 <Result>Fail</Result>
-<<Message>".get_text("rrservice", "_err102")."</Message>
+<Message>" . get_text("RRService", "_err102b") . "</Message>
 </ResultInfo>";
     send_output($output);
     exit;
 }
 
-// ALC 10/29/25: Removed latitude/longitude validation - not used in Giftology app
-/*
-if ($latitude == 0 or $longitude == 0) {
-    $output = "<ResultInfo>
-<ErrorNumber>205</ErrorNumber>
-<Result>Fail</Result>
-<Message>" . get_text("rrservice", "_err205") . "</Message>
-</ResultInfo>";
-    send_output($output);
-    exit;
-}
-*/
-
-// Lookup user by email
-$sql = 'SELECT * FROM employee JOIN subscriber ON subscriber.subscriber_serial = employee.subscriber_serial WHERE employee_email="' . $email_to . '"';
-debug("Check the user record: " . $sql);
-
+//-------------------------------------
+// Lookup token
+$token_safe = mysqli_real_escape_string($mysqli_link, $authorization_code);
+$sql = "SELECT ac.*, u.first_name, u.last_name, u.email, u.user_serial
+        FROM authorization_code ac
+        JOIN user u ON u.user_serial = ac.user_serial
+        WHERE ac.authorization_code = '$token_safe' 
+          AND ac.deleted_flag = 0";
 $result = mysqli_query($mysqli_link, $sql);
-if (mysqli_error($mysqli_link)) {
-    debug("SQL error: " . mysqli_error($mysqli_link));
-    exit;
-}
-$rows = mysqli_num_rows($result);
-$employee_row = mysqli_fetch_assoc($result);
 
-if ($rows == 1) {
-    debug("Employee found");
-} else {
-    debug("No user found with that info");
+if (mysqli_num_rows($result) != 1) {
     $output = "<ResultInfo>
-<ErrorNumber>105</ErrorNumber>
-<Result>Fail</Result>
-<<Message>".get_text("rrservice", "_err105")."</Message>
-</ResultInfo>";
+        <ErrorNumber>105</ErrorNumber>
+        <Result>Fail</Result>
+        <Message>". get_text("vcservice", "_err105") . "</Message>
+    </ResultInfo>";
     send_output($output);
     exit;
 }
 
-//--------------------------------------------------
-// Email sending section (commented out for stub)
-// ALC 10/29/25: Commented out actual email-sending per checklist (stub version only)
-/*
-$setting_array = get_setting_list("system");
-$from_email = $setting_array["email_sender_from"] . "@" . $setting_array["email_domain"];
-$from_name = $setting_array["email_from_name"];
-$to_name = $employee_row["first_name"] . " " . $employee_row["last_name"];
-$to_email = $employee_row["employee_email"];
-$subject = "Reset Password";
-$email_body = "Your username is " . $employee_row["employee_username"] . " and your password is " . $employee_row["employee_password"];
-$attachment = null;
-$message_serial = 0;
-$reply_to_email = $setting_array["email_reply_email"];
-$api_key = $setting_array["sendgrid_API_key"];
-$email_service_name = $setting_array["email_service_name"];
+$token_row = mysqli_fetch_assoc($result);
 
-debug("Giftology email service config loaded"); // changed crewzcontrol -> giftology in comment
+//-------------------------------------
+// Token expiration (1 hour)
+$token_time = strtotime($token_row['created']);
+$current_time = time();
+if (($current_time - $token_time) > 3600) {
+    // Invalidate token
+    $invalidate_sql = "UPDATE authorization_code SET deleted_flag=1 WHERE authorization_code='$token_safe'";
+    mysqli_query($mysqli_link, $invalidate_sql);
 
-// $result = send_email($from_email, $to_email, $subject, $email_body, $attachment, null, null, null, $from_name, $to_name, $message_serial, $reply_to_email, $api_key, $email_service_name);
-// if ($result->statusCode() == 202) {
-//     debug("Email successfully sent to: " . $to_email);
-// }
-*/
+    $output = "<ResultInfo>
+        <ErrorNumber>101</ErrorNumber>
+        <Result>Fail</Result>
+        <Message>". get_text("vcservice", "_err101") . "</Message>
+    </ResultInfo>";
+    send_output($output);
+    exit;
+}
 
+//-------------------------------------
+// Validate password length
+if (strlen($new_password) < 45) {
+    $output = "<ResultInfo>
+        <ErrorNumber>106</ErrorNumber>
+        <Result>Fail</Result>
+        <Message>". get_text("vcservice", "_err106") . "</Message>
+    </ResultInfo>";
+    send_output($output);
+    exit;
+}
+
+//-------------------------------------
+// Update password
+$hashed_password = password_hash($new_password, PASSWORD_BCRYPT);
+$user_serial_safe = mysqli_real_escape_string($mysqli_link, $token_row['user_serial']);
+$update_sql = "UPDATE user SET password='$hashed_password' WHERE user_serial='$user_serial_safe'";
+mysqli_query($mysqli_link, $update_sql);
+
+//-------------------------------------
+// Invalidate token
+$invalidate_sql = "UPDATE authorization_code SET deleted_flag=1 WHERE authorization_code='$token_safe'";
+mysqli_query($mysqli_link, $invalidate_sql);
+
+//-------------------------------------
+// Return success
+$output = "<ResultInfo>
+    <ErrorNumber>0</ErrorNumber>
+    <Result>Success</Result>
+    <Message>Password has been successfully reset</Message>
+    <Email>{$token_row['email']}</Email>
+    <Name>{$token_row['first_name']} {$token_row['last_name']}</Name>
+</ResultInfo>";
+send_output($output);
+exit;
 ?>
-

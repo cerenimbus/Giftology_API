@@ -216,10 +216,10 @@ if (mysqli_error($mysqli_link)) {
 $task = mysqli_fetch_assoc($result);
 if (!$task) {
     $output = "<ResultInfo>
-        <ErrorNumber>0</ErrorNumber>
-        <Result>Fail</Result>
-        <Message>No task found</Message>
-    </ResultInfo>";
+                    <ErrorNumber>0</ErrorNumber>
+                    <Result>Success</Result>
+                    <Message>No task found</Message>
+               </ResultInfo>";
     send_output($output);
     exit;
 }
@@ -227,17 +227,17 @@ if (!$task) {
 //-------------------------------------
 // BUILD XML OUTPUT
 $output = '<ResultInfo>
-    <ErrorNumber>0</ErrorNumber>
-    <Result>Success</Result>
-    <Message>Task found</Message>
-    <Task>
-        <Name>' . htmlspecialchars($task["workflow_detail_name"]) . '</Name>
-        <Serial>' . $task["event_serial"] . '</Serial>
-        <Contact>' . htmlspecialchars($task["contact_name"]) . '</Contact>
-        <Date>' . $task["event_target_date"]. '</Date>
-        <Status>' . $task["status_on_completion"] . '</Status>
-    </Task>
-</ResultInfo>';
+           <ErrorNumber>0</ErrorNumber>
+           <Result>Success</Result>
+           <Message>Task found</Message>
+                <Task>
+                <Name>' . htmlspecialchars($task["workflow_detail_name"]) . '</Name>
+                <Serial>' . $task["event_serial"] . '</Serial>
+                <Contact>' . htmlspecialchars($task["contact_name"]) . '</Contact>
+                <Date>' . $task["event_target_date"]. '</Date>
+                <Status>' . $task["status_on_completion"] . '</Status>
+                </Task>
+            </ResultInfo>';
 
 send_output($output);
 exit;

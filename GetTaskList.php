@@ -27,7 +27,9 @@
 //***************************************************************
 
 $debugflag = false;
-
+if( isset($_REQUEST["debugflag"])) {
+    $debugflag = true;
+}
 //if( isset($_REQUEST["debugflag"])) {
 //    $debugflag = true;
 //}
@@ -76,6 +78,7 @@ $language           = $_REQUEST["Language"]; // Standard Language code from mobi
 $mobile_version     = $_REQUEST["MobileVersion"]; //## ( hard coded value in software)
 
 $hash = sha1($device_ID . $requestDate.$authorization_code  );
+// RKG 1/25/26 Set defualt mobiel version
 
 // RKG 11/30/2013
 // make a log entry for this call to the web service
@@ -200,14 +203,13 @@ $sql = 'SELECT *,
         FROM event e
         JOIN workflow_detail wd ON e.workflow_detail_serial = wd.workflow_detail_serial
         JOIN workflow w ON wd.workflow_serial = w.workflow_serial
-        LEFT JOIN workflow_detail_type wdt ON wd.workflow_detail_type_serial = wdt.workflow_detail_type_serial
         LEFT JOIN contact c ON e.contact_serial = c.contact_serial
-        LEFT JOIN user u ON c.user_serial = u.user_serial
+        LEFT JOIN user u ON e.user_serial = u.user_serial
         WHERE u.user_serial = ' . intval($user_serial) . '
           AND e.deleted_flag = 0
-        ORDER BY e.event_target_date ASC';
+        ORDER BY e.event_target_date';
 
-debug("Task list SQL: " . $sql);
+debug("213 Task list SQL: " . $sql);
 
 // $sql = 'SELECT *, 
 //        CONCAT(contact.first_name, " ", contact.last_name) AS contact_name

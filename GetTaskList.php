@@ -163,39 +163,6 @@ send_output($output);
     exit;
 }
 
-// ALC 10/29/25 THIS IS A SAMPLE STUB. The purpose is to always return a successful message, for testing
-// $output = '<ResultInfo>
-//       <ErrorNumber>0</ErrorNumber>
-//       <Result>Success</Result>
-//       <Message>Stub Task list (sample data)</Message>
-//       <Selections>
-//           <Task>
-//               <Name>Inventory Check</Name>
-//               <Serial>1001</Serial>
-//               <Contact>Warehouse A</Contact>
-//                <Date>10/29/2025</Date>
-//                <Status>0</Status>
-//           </Task>
-//           <Task>
-//               <Name>Delivery Dispatch</Name>
-//               <Serial>1002</Serial>
-//               <Contact>Stub Employee Name</Contact>
-//               <Date>10/29/2025</Date>
-//               <Status>1</Status>
-//           </Task>
-//           <Task>
-//               <Name>System Maintenance</Name>
-//               <Serial>1003</Serial>
-//               <Contact>IT Department</Contact>
-//               <Date>10/30/2025</Date>
-//               <Status>0</Status>
-//           </Task>
-//       </Selections>
-//   </ResultInfo>';
-
-// send_output($output);
-// exit;
-
 $user_serial = $authorization_row["user_serial"];
 
 $sql = 'SELECT *,
@@ -207,21 +174,10 @@ $sql = 'SELECT *,
         LEFT JOIN user u ON e.user_serial = u.user_serial
         WHERE u.user_serial = ' . intval($user_serial) . '
           AND e.deleted_flag = 0
+          AND e.event_completed_date is null 
         ORDER BY e.event_target_date';
 
 debug("213 Task list SQL: " . $sql);
-
-// $sql = 'SELECT *, 
-//        CONCAT(contact.first_name, " ", contact.last_name) AS contact_name
-//        FROM event e
-//        JOIN workflow_detail wd ON e.workflow_detail_serial = wd.workflow_detail_serial
-//        JOIN workflow w ON wd.workflow_serial = w.workflow_serial
-//        LEFT JOIN workflow_detail_type wdt ON wd.workflow_detail_type_serial = wdt.workflow_detail_type_serial
-//        LEFT JOIN contact ON e.contact_serial = contact.contact_serial
-//        LEFT JOIN user u ON contact.subscriber_serial = u.subscriber_serial
-//        WHERE u.user_serial = ' . intval($user_serial) . '
-//        AND e.deleted_flag = 0
-//        ORDER BY e.event_target_date ASC';
 
 $result = mysqli_query($mysqli_link, $sql);
 // Rkg if error, write out API response.

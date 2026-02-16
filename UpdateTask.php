@@ -66,14 +66,24 @@ debug("Incoming request: " . var_export($_REQUEST, true));
 //---------------------------------------------------------------
 // Retrieve parameters (YOUR EXACT REQUIRED LINES)
 //---------------------------------------------------------------
-$deviceID      = $_REQUEST["DeviceID"] ?? "";
-$requestDate   = $_REQUEST["Date"] ?? "";
-$key           = $_REQUEST["Key"] ?? "";
-$authorization = $_REQUEST["AC"] ?? "";
-$language      = $_REQUEST["Language"] ?? "";
-$mobileVersion = $_REQUEST["MobileVersion"] ?? "";
-$taskID        = $_REQUEST["Task"] ?? "";
-$status        = $_REQUEST["Status"] ?? ""; // 0 or 1
+$deviceID      = $_REQUEST["DeviceID"];
+$requestDate   = $_REQUEST["Date"];
+$key           = $_REQUEST["Key"];
+$authorization = $_REQUEST["AC"];
+$language      = $_REQUEST["Language"];
+$mobileVersion = $_REQUEST["MobileVersion"];
+$taskID        = $_REQUEST["Task"];
+$status        = $_REQUEST["Status"]; // 0 or 1
+
+// RKG 11/30/2013
+// make a log entry for this call to the web service
+// compile a string of all of the request values
+$text= var_export($_REQUEST, true);
+//RKG 3/10/15 clean quote marks
+$test = str_replace(chr(34), "'", $text);
+$log_sql= 'insert web_log SET method="UpdateTask", text="'. $text. '", created="' . date("Y-m-d H:i:s") .'"';
+debug("Web log:" .$log_sql);
+
 
 //---------------------------------------------------------------
 // Setup language for messages
@@ -96,7 +106,7 @@ if ($expectedKey !== $key) {
     <Result>Fail</Result>
     <Message>" . get_text("vcservice", "_err102a") . "</Message>
 </ResultInfo>";
-
+    $log_comment= 
     send_output($output);
     exit;
 }
@@ -115,24 +125,6 @@ if ($authorization === "TEST-STUB") {
     <Message>Stub task update accepted (offline testing mode)</Message>
     <TaskID>" . htmlspecialchars($taskID) . "</TaskID>
     <Status>" . htmlspecialchars($status) . "</Status>
-</ResultInfo>";
-
-    send_output($output);
-    exit;
-}
-
-//---------------------------------------------------------------
-// Mobile version validation
-//---------------------------------------------------------------
-$current_mobile_version = get_setting("system", "current_mobile_version");
-debug("current_mobile_version = " . $current_mobile_version);
-
-if ($current_mobile_version > $mobileVersion) {
-
-    $output = "<ResultInfo>
-    <ErrorNumber>106</ErrorNumber>
-    <Result>Fail</Result>
-    <Message>" . get_text("vcservice", "_err106") . "</Message>
 </ResultInfo>";
 
     send_output($output);
@@ -168,7 +160,6 @@ if (mysqli_error($mysqli_link)) {
 }
 
 if (mysqli_num_rows($auth_result) == 0) {
-
     $output = "<ResultInfo>
     <ErrorNumber>202</ErrorNumber>
     <Result>Fail</Result>
@@ -185,12 +176,12 @@ $userSerial = intval($auth_row["user_serial"]);
 //---------------------------------------------------------------
 // Input validation
 //---------------------------------------------------------------
-if ($taskID === "" || !is_numeric($taskID)) {
+if ($taskID == "" || !is_numeric($taskID)) {
 
     $output = "<ResultInfo>
-    <ErrorNumber>104</ErrorNumber>
+    <ErrorNumber>302</ErrorNumber>
     <Result>Fail</Result>
-    <Message>Invalid Task ID</Message>
+    <Message>" .get_text("vcservice", "_err302"). "</Message>
 </ResultInfo>";
 
     send_output($output);
@@ -212,20 +203,14 @@ if ($status !== "0" && $status !== "1") {
 //---------------------------------------------------------------
 // Insert or update user task status
 //---------------------------------------------------------------
-$update_sql = "
-INSERT INTO user_tasks
-SET
-    device_id = '" . mysqli_real_escape_string($mysqli_link, $deviceID) . "',
-    task_serial = '" . mysqli_real_escape_string($mysqli_link, $taskID) . "',
-    status_flag = '" . mysqli_real_escape_string($mysqli_link, $status) . "',
-    mobile_version = '" . mysqli_real_escape_string($mysqli_link, $mobileVersion) . "',
-    updated = NOW()
-ON DUPLICATE KEY UPDATE
-    status_flag = VALUES(status_flag),
-    updated = NOW()
-";
+if( $status== "1"){
+    $event_completed_date= '"'. date("Y-m-d") . '"';
+} else {
+    $event_completed_date="NULL";
+}
+$update_sql = "update event set event_completed_date=" . $event_completed_date;
 
-debug("Update SQL: $update_sql");
+debug("231 Update SQL: $update_sql");
 
 mysqli_query($mysqli_link, $update_sql);
 

@@ -24,10 +24,10 @@
 
 
 $debugflag = false;
+if( isset($_REQUEST["debugflag"])) {
+    $debugflag = true;
+}
 
-// if( isset($_REQUEST["debugflag"])) {
-//     $debugflag = true;
-// }
 // this stops the java scrip from being written because this is a microservice API
 $suppress_javascript = true;
 
@@ -67,12 +67,15 @@ debug("GetContactList");
 //-------------------------------------
 // Get the values passed in
 $device_ID          = urldecode($_REQUEST["DeviceID"] ?? "");
-$requestDate        = $_REQUEST["Date"] ?? "";
-$authorization_code = $_REQUEST["AC"] ?? "";
-$key                = $_REQUEST["Key"] ?? "";
-$language           = $_REQUEST["Language"] ?? "en";
-$mobile_version     = $_REQUEST["MobileVersion"] ?? "1.0";
+$requestDate        = $_REQUEST["Date"] ;
+$authorization_code = $_REQUEST["AC"];
+$key                = $_REQUEST["Key"] ;
+$language           = $_REQUEST["Language"] ;
+$mobile_version     = $_REQUEST["MobileVersion"];
 
+if( $mobile_version==""){
+	$mobile_version=0;
+}
 $hash = sha1($device_ID . $requestDate.$authorization_code  );
 
 // RKG 11/30/2013
@@ -94,33 +97,6 @@ $requestDate   ."<br>".
 'Hash '. $hash  			."<br>"
 );
 
-// // STUB: Return only ONE contact to simulate the specific query
-// $output = '<ResultInfo>
-//   <ErrorNumber>0</ErrorNumber>
-//   <Result>Success</Result>
-//   <Message>Contact list retrieved successfully (STUB)</Message>
-//   <Contacts>
-//     <Contact>
-//       <Name>James E</Name>
-//       <Serial>1001</Serial>
-//       <Status>Active</Status>
-//     </Contact>
-//     <Contact>
-//       <Name>Alfred C</Name>
-//       <Serial>1002</Serial>
-//       <Status>Active</Status>
-//     </Contact>
-//     <Contact>
-//       <Name>Janvel A</Name>
-//       <Serial>1003</Serial>
-//       <Status>Active</Status>
-//     </Contact>
-//   </Contacts>
-// </ResultInfo>';
-
-// send_output($output);
-// exit;
-
 
 // Check the security key
 // GENIE 04/22/14 - change: echo xml to call send_output function
@@ -131,7 +107,7 @@ if( $hash != $key){
 	$output = "<ResultInfo>
 	<ErrorNumber>102</ErrorNumber>
 	<Result>Fail</Result>
-	<Message>". get_text("rrservice", "_err102b")."</Message>
+	<Message>". get_text("vcservice", "_err102b")."</Message>
 	</ResultInfo>";
 	//RKG 1/29/2020 New field of $log_comment allows the error message to be written to the web log
 	$log_comment= "Hash:".$hash."  and Key:". $key;
@@ -146,7 +122,7 @@ $current_mobile_version = get_setting("system","current_mobile_version");
         $output = "<ResultInfo>
     <ErrorNumber>106</ErrorNumber>
     <Result>Fail</Result>
-    <Message>".get_text("rrservice", "_err106")."</Message>
+    <Message>".get_text("vcservice", "_err106")."</Message>
     </ResultInfo>";
 	send_output($output);
 	exit;
@@ -158,62 +134,60 @@ $authorization_sql = 'select * from authorization_code
                       where user.deleted_flag=0 
                       and authorization_code.authorization_code="' . $authorization_code . '"';
 
-debug($authorization_sql);
+debug("127 get authorization ". $authorization_sql);
 
 // Excute and check for success
 $authorization_result=mysqli_query($mysqli_link,$authorization_sql);
-if ( mysqlerr( $authorization_sql)) {
 
-    exit;
-
+debug("141 got the query");
+if (mysqli_error($mysqli_link )) {
+    debug("143 error found");
+    $error= mysqli_error($mysqli_link );
+	$output = "<ResultInfo>
+<ErrorNumber>104</ErrorNumber>
+<Result>Fail</Result>
+<Message>".get_text("vcservice", "_err104a")." ". $authorization_sql ." ". $error."</Message>
+</ResultInfo>";
+	debug("Mysql error: ". $error. " -- ". $authorization_sql);
+	$log_comment= mysqli_error($mysqli_link);
+	send_output($output);
+	exit;
 }
+
 
 $authorization_row= mysqli_fetch_array( $authorization_result);
 $authorization_row_count = mysqli_num_rows($authorization_result);
+debug("160 got the rows " .$authorization_row_count);
+ 
 //-------------------------------------
 
 // If no authorization code is returned, give an error code indicating it was not found
-debug( "check for code found");
+debug( "165 check for code found");
 
 debug($authorization_row['authorization_code']." = ". $authorization_code  );
 
 if ( $authorization_row['authorization_code']!= $authorization_code OR  $authorization_row_count==0 ){
-
+    debug("170 authorization code not found");
     // RKG 12/8/25 return error "invalid authorization code" if not found
-
     $output = "<ResultInfo>
-
 <ErrorNumber>202</ErrorNumber>
 <Result>Fail</Result>
-<Message>".get_text("rrservice", "_err202a")."</Message>
+<Message>".get_text("vcservice", "_err202a")."</Message>
 </ResultInfo>";
 send_output($output);
     exit;
 }
+debug("180 authorization code FOUND");
+$user_serial = $authorization_row["user_serial"] ;
+debug("182 got the user_serial ".$user_serial );
 
+$sql = 'SELECT * 
+    FROM contact 
+    WHERE user_serial ="' . $user_serial . '" 
+    AND deleted_flag = 0 
+    ORDER BY first_name';
 
-$contact_serial = $authorization_row["contact_serial"] ?? null;
-
-$sql = 'SELECT 
-    c.contact_serial, 
-    c.first_name, 
-    c.last_name, 
-    c.status
-    FROM contact c
-    -- LEFT JOIN contact_to_user ctu ON c.contact_serial = ctu.contact_serial AND ctu.deleted_flag = 0
-    -- LEFT JOIN user u ON ctu.contact_to_user_serial = u.user_serial AND u.deleted_flag = 0
-    -- WHERE c.contact_serial ="' . $contact_serial . '" 
-    WHERE c.deleted_flag = 0';
-
-// IF a specific serial was requested, append the filter
-if (!empty($target_contact_serial)) {
-  $safe_serial = mysqli_real_escape_string($mysqli_link, $target_contact_serial);
-  $sql .= " AND contact_serial = '$safe_serial'";
-  }
-  // Order by name
-  $sql .= " ORDER BY first_name";
-
-debug("Contact list SQL: " . $sql);
+debug("190Contact list SQL: " . $sql);
 
 $result = mysqli_query($mysqli_link, $sql);
 
@@ -226,7 +200,7 @@ if (mysqli_error($mysqli_link)) {
 	$output = "<ResultInfo>
 		<ErrorNumber>103</ErrorNumber>
 		<Result>Fail</Result>
-		<Message>" . get_text("rrservice", "_err103a") . " " . $update_sql . " " . $error . "</Message>
+		<Message>" . get_text("vcservice", "_err103a") . " " . $update_sql . " " . $error . "</Message>
 		</ResultInfo>";
 	debug("Mysql error: " . $error . " -- " . $sql);
 	$log_comment = $error;

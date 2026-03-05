@@ -48,13 +48,13 @@ if ( file_exists( 'send_output.php')) {
 debug("AuthorizeDeviceID");
 
 //-------------------------------------
-// Get the values passed in
-$device_ID      = mysqli_real_escape_string($mysqli_link, urldecode($_REQUEST["DeviceID"])); //-alphanumeric up to 60 characters which uniquely identifies the mobile device (iphone, ipad, etc)
-$requestDate    = mysqli_real_escape_string($mysqli_link, $_REQUEST["Date"]);//- date/time as a string – alphanumeric up to 20 [format:  MM/DD/YYYY HH:mm]
-$security_code  = mysqli_real_escape_string($mysqli_link, $_REQUEST["SecurityCode"]);//- date/time as a string – alphanumeric up to 20 [format:  MM/DD/YYYY HH:mm]
-$key            = mysqli_real_escape_string($mysqli_link, $_REQUEST["Key"]);// – alphanumeric 40, SHA-1 hash of Mobile Device ID + date string + secret phrase
-$username       = mysqli_real_escape_string($mysqli_link, urldecode($_REQUEST["UserName"]));     // alphanumeric, 10 characters
-$password       = mysqli_real_escape_string($mysqli_link, urldecode($_REQUEST["Password"]));     // alphanumeric, 10 characters
+// Get the values passed in (RAW — not escaped yet, needed for hash verification)
+$device_ID      = urldecode($_REQUEST["DeviceID"]); //-alphanumeric up to 60 characters which uniquely identifies the mobile device (iphone, ipad, etc)
+$requestDate    = $_REQUEST["Date"];//- date/time as a string – alphanumeric up to 20 [format:  MM/DD/YYYY HH:mm]
+$security_code  = $_REQUEST["SecurityCode"];//- date/time as a string – alphanumeric up to 20 [format:  MM/DD/YYYY HH:mm]
+$key            = $_REQUEST["Key"];// – alphanumeric 40, SHA-1 hash of Mobile Device ID + date string + secret phrase
+$username       = urldecode($_REQUEST["UserName"]);     // alphanumeric, 10 characters
+$password       = urldecode($_REQUEST["Password"]);     // alphanumeric, 10 characters
 
 $hash = sha1($device_ID . $requestDate);
 
@@ -64,7 +64,7 @@ $hash = sha1($device_ID . $requestDate);
 $text= var_export($_REQUEST, true);
 //RKG 3/10/15 clean quote marks
 $test = str_replace(chr(34), "'", $text);
-// Sanitizing the text block for the log query
+// KC 03/05/26 - Escape the log text to prevent SQL injection in the logging statement
 $safe_text = mysqli_real_escape_string($mysqli_link, $text);
 $log_sql= 'insert web_log SET method="AuthorizeDeviceID", text="'. $safe_text. '", created="' . date("Y-m-d H:i:s") .'"';
 debug("Web log:" .$log_sql);
@@ -95,6 +95,19 @@ $hash."<br>");
     send_output($output);
     exit;
 }
+
+//-------------------------------------
+// KC 03/05/26 - SQL Injection Prevention
+// Now that hash verification has passed, escape ALL $_REQUEST input variables
+// before they are used in any SQL queries.
+//-------------------------------------
+$device_ID      = mysqli_real_escape_string($mysqli_link, $device_ID);      // from $_REQUEST["DeviceID"]
+$requestDate    = mysqli_real_escape_string($mysqli_link, $requestDate);    // from $_REQUEST["Date"]
+$security_code  = mysqli_real_escape_string($mysqli_link, $security_code);  // from $_REQUEST["SecurityCode"]
+$key            = mysqli_real_escape_string($mysqli_link, $key);            // from $_REQUEST["Key"]
+$username       = mysqli_real_escape_string($mysqli_link, $username);       // from $_REQUEST["UserName"]
+$password       = mysqli_real_escape_string($mysqli_link, $password);       // from $_REQUEST["Password"]
+//-------------------------------------
 
 
     // RKG 11/6/24  Get the user serial - and verify security
@@ -134,6 +147,8 @@ if (($row_count>0) OR ( $user_row["email"]=="kirbystuff1@comcast.net" AND $secur
     exit;
 }
 
+// KC 03/05/26 - Escape user_serial from DB result before using in SQL queries below
+$user_serial = mysqli_real_escape_string($mysqli_link, $user_serial);
 
 // RKG 1/6/24 Create the authorization Code
 // First make a GUID.  GenerateGUID is a function located above that chuncks up a random number.  URLENCODE is then used to remove any characters that could cause problems

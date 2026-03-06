@@ -94,7 +94,8 @@ $hash = sha1($device_ID . $requestDate);
 // compile a string of all of the request values
 $text= var_export($_REQUEST, true);
 //RKG 3/10/15 clean quote marks
-$test = str_replace(chr(34), "'", $text);
+// KEMG 03/06/26 - Fixed: was storing result in $test (typo), corrected to $text
+$text = str_replace(chr(34), "'", $text);
 // KEMG 03/05/26 - Escape the log text to prevent SQL injection in the logging statement
 $safe_text = mysqli_real_escape_string($mysqli_link, $text);
 $log_sql= 'insert web_log SET method="AuthorizeUser", text="'. $safe_text. '", created="' . date("Y-m-d H:i:s") .'"';
@@ -233,7 +234,7 @@ $to_name=      $user_row["first_name"] ." ".$user_row["last_name"];
 $to_email=     $user_row["email"];
 $subject=       "ROR Login attempt";
 $email_body=    "Thank you for logging in to the ROR mobile app. Your ROR security code is: ".$security_code ;
-$attachement=   null;
+$attachment=   null;
 $message_serial=0;
 $reply_to_email= $user_row["email_reply_to_email"];
 $api_key =      $user_row["email_API_key"];

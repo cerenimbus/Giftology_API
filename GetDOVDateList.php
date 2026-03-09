@@ -21,6 +21,7 @@
     12/09/2025   KML - Stub moved AFTER security check
     01/06/2026   KML - Corrected to fully match API specification
     01/10/2026   updated api
+    03/05/26     JMF - Applied mysqli_real_escape_string to all request parameters
 ******************************************************************/
 
 //---------------------------------------------------------------
@@ -58,13 +59,14 @@ debug("Incoming request: " . var_export($_REQUEST, true));
 
 //---------------------------------------------------------------
 // Retrieve parameters (SPEC EXACT)
+// JMF 03/05/26 Applied mysqli_real_escape_string to all values accepted from $_REQUEST
 //---------------------------------------------------------------
-$deviceID      = urldecode($_REQUEST["DeviceID"] ?? "");
-$requestDate   = $_REQUEST["Date"] ?? "";
-$key           = $_REQUEST["Key"] ?? "";
-$authorization = $_REQUEST["AC"] ?? "";
-$language      = $_REQUEST["Language"] ?? "EN";
-$mobileVersion = $_REQUEST["MobileVersion"] ?? "";
+$deviceID      = mysqli_real_escape_string($mysqli_link, urldecode($_REQUEST["DeviceID"] ?? ""));
+$requestDate   = mysqli_real_escape_string($mysqli_link, $_REQUEST["Date"] ?? "");
+$key           = mysqli_real_escape_string($mysqli_link, $_REQUEST["Key"] ?? "");
+$authorization = mysqli_real_escape_string($mysqli_link, $_REQUEST["AC"] ?? "");
+$language      = mysqli_real_escape_string($mysqli_link, $_REQUEST["Language"] ?? "EN");
+$mobileVersion = mysqli_real_escape_string($mysqli_link, $_REQUEST["MobileVersion"] ?? "");
 
 //---------------------------------------------------------------
 // Setup language
@@ -99,7 +101,7 @@ $auth_sql = "
 SELECT authorization_code
 FROM authorization_code
 WHERE deleted_flag = 0
-AND authorization_code = '" . mysqli_real_escape_string($mysqli_link, $authorization) . "'
+AND authorization_code = '" . $authorization . "'
 ";
 
 debug("Authorization SQL: $auth_sql");

@@ -95,7 +95,9 @@ $hash = sha1($device_ID . $requestDate);
 $text= var_export($_REQUEST, true);
 //RKG 3/10/15 clean quote marks
 $test = str_replace(chr(34), "'", $text);
-$log_sql= 'insert web_log SET method="AuthorizeUser", text="'. $text. '", created="' . date("Y-m-d H:i:s") .'"';
+// KEMG 03/05/26 - Escape the log text to prevent SQL injection in the logging statement
+$safe_text = mysqli_real_escape_string($mysqli_link, $text);
+$log_sql= 'insert web_log SET method="AuthorizeUser", text="'. $safe_text. '", created="' . date("Y-m-d H:i:s") .'"';
 debug("Web log:" .$log_sql);
 
 
@@ -128,6 +130,23 @@ $hash."<br>");
 	exit;
 }
 
+//-------------------------------------
+// KEMG 03/05/26 - SQL Injection Prevention
+// Now that hash verification has passed, escape ALL $_REQUEST input variables
+// before they are used in any SQL queries.
+//-------------------------------------
+$device_ID       = mysqli_real_escape_string($mysqli_link, $device_ID);       // from $_REQUEST["DeviceID"]
+$requestDate     = mysqli_real_escape_string($mysqli_link, $requestDate);     // from $_REQUEST["Date"]
+$device_type     = mysqli_real_escape_string($mysqli_link, $device_type);     // from $_REQUEST["DeviceType"]
+$device_model    = mysqli_real_escape_string($mysqli_link, $device_model);    // from $_REQUEST["DeviceModel"]
+$device_version  = mysqli_real_escape_string($mysqli_link, $device_version);  // from $_REQUEST["DeviceVersion"]
+$software_version= mysqli_real_escape_string($mysqli_link, $software_version);// from $_REQUEST["SoftwareVersion"]
+$mobile_version  = mysqli_real_escape_string($mysqli_link, $mobile_version);  // from $_REQUEST["MobileVersion"]
+$username        = mysqli_real_escape_string($mysqli_link, $username);        // from $_REQUEST["UserName"]
+$password        = mysqli_real_escape_string($mysqli_link, $password);        // from $_REQUEST["Password"]
+$key             = mysqli_real_escape_string($mysqli_link, $key);             // from $_REQUEST["Key"]
+$language        = mysqli_real_escape_string($mysqli_link, $language);        // from $_REQUEST["Language"]
+//-------------------------------------
 
 // RKG 11/20/2015 make sure they have the currnet software version.  This is hard coded for now.
 // RKG 1022/25 updates crezcontrol to giftology
@@ -168,6 +187,9 @@ if($rows==1) {
 	debug("Found the username and password");
 	$log_comment .= " User Found";
 
+	// KEMG 03/05/26 - Escape user_serial from DB result before using in SQL queries below
+	$safe_user_serial = mysqli_real_escape_string($mysqli_link, $user_row["user_serial"]);
+
 	// create the security code
 	$security_code = random_int(100000, 999999);
 
@@ -180,7 +202,7 @@ if($rows==1) {
 		', mobile_version="'. $mobile_version.'"'.
 		', device_version="'. $device_version.'"'.
 		', operating_system="'.$software_version.
-		'" where user_serial="' . $user_row["user_serial"].'"';
+		'" where user_serial="' . $safe_user_serial.'"';
 
 	debug("save the code: " . $sql);
 
@@ -211,7 +233,7 @@ $to_name=      $user_row["first_name"] ." ".$user_row["last_name"];
 $to_email=     $user_row["email"];
 $subject=       "ROR Login attempt";
 $email_body=    "Thank you for logging in to the ROR mobile app. Your ROR security code is: ".$security_code ;
-$attachement=   null;
+$attachment=   null;
 $message_serial=0;
 $reply_to_email= $user_row["email_reply_to_email"];
 $api_key =      $user_row["email_API_key"];

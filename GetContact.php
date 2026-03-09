@@ -264,4 +264,3 @@ $output = '<ResultInfo>
 
 send_output($output);
 exit;
-?>

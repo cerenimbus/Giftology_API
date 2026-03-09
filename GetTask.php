@@ -24,6 +24,8 @@
 //          12/16/25 testing authorize validation
 //          12/19/25 remove stub and enable real DB response for GetTask
 //          1/05/25  fix api
+//          3/09/26  KEMG - SQL Injection Prevention: added mysqli_real_escape_string to all $_REQUEST inputs
+//          3/09/26  KEMG - Escape the log text to prevent SQL injection in the logging statement
 //***************************************************************
 
 $debugflag = false;
@@ -85,7 +87,9 @@ $task_serial        = $_REQUEST["Task"]; //added task
 $text= var_export($_REQUEST, true);
 //RKG 3/10/15 clean quote marks
 $test = str_replace(chr(34), "'", $text);
-$log_sql= 'insert web_log SET method="GetTask", text="'. $text. '", created="' . date("Y-m-d H:i:s") .'"';
+// KEMG 03/09/26 - Escape the log text to prevent SQL injection in the logging statement
+$safe_text = mysqli_real_escape_string($mysqli_link, $text);
+$log_sql= 'insert web_log SET method="GetTask", text="'. $safe_text. '", created="' . date("Y-m-d H:i:s") .'"';
 debug("Web log:" .$log_sql);
 
 // FOR TESTING ONLY  write the values back out so we can see them
@@ -113,6 +117,20 @@ if( $hash != $key){
 	send_output($output);
 	exit;
 }
+
+//-------------------------------------
+// KEMG 03/09/26 - SQL Injection Prevention
+// Now that hash verification has passed, escape ALL $_REQUEST input variables
+// before they are used in any SQL queries.
+//-------------------------------------
+$device_ID          = mysqli_real_escape_string($mysqli_link, $device_ID);          // from $_REQUEST["DeviceID"]
+$requestDate        = mysqli_real_escape_string($mysqli_link, $requestDate);        // from $_REQUEST["Date"]
+$key                = mysqli_real_escape_string($mysqli_link, $key);                // from $_REQUEST["Key"]
+$authorization_code = mysqli_real_escape_string($mysqli_link, $authorization_code); // from $_REQUEST["AC"]
+$language           = mysqli_real_escape_string($mysqli_link, $language);           // from $_REQUEST["Language"]
+$mobile_version     = mysqli_real_escape_string($mysqli_link, $mobile_version);     // from $_REQUEST["MobileVersion"]
+$task_serial        = mysqli_real_escape_string($mysqli_link, $task_serial);        // from $_REQUEST["Task"]
+//-------------------------------------
 
 // RKG 11/20/2015 make sure they have the currnet software version. 
 $current_mobile_version = get_setting("system","current_mobile_version");

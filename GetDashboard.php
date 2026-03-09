@@ -44,12 +44,12 @@ if ( file_exists( 'send_output.php')) {
 debug("GetDashboard");
 
 //-------------------------------------
-// Get the values passed in
+// Get the values passed in (RAW — not escaped yet, needed for hash verification)
 $device_ID  	= urldecode( $_REQUEST["DeviceID"]); //-alphanumeric up to 60 characters which uniquely identifies the mobile device (iphone, ipad, etc)
-$requestDate   	= $_REQUEST["Date"];//- date/time as a string � alphanumeric up to 20 [format:  MM/DD/YYYY HH:mm]
+$requestDate   	= $_REQUEST["Date"];//- date/time as a string  alphanumeric up to 20 [format:  MM/DD/YYYY HH:mm]
 $mobile_version = $_REQUEST["MobileVersion"];
-$authorization_code 	= $_REQUEST["AC"];//- date/time as a string � alphanumeric up to 20 [format:  MM/DD/YYYY HH:mm]
-$key   			= $_REQUEST["Key"];// � alphanumeric 40, SHA-1 hash of Mobile Device ID + date string + secret phrase
+$authorization_code 	= $_REQUEST["AC"];//- date/time as a string  alphanumeric up to 20 [format:  MM/DD/YYYY HH:mm]
+$key   			= $_REQUEST["Key"];// alphanumeric 40, SHA-1 hash of Mobile Device ID + date string + secret phrase
 $serial			= $_REQUEST["Serial"];
 
 if( $mobile_version==""){
@@ -63,7 +63,10 @@ $hash = sha1($device_ID . $requestDate.$authorization_code  );
 $text= var_export($_REQUEST, true);
 //RKG 3/10/15 clean quote marks
 $test = str_replace(chr(34), "'", $text);
-$log_sql= 'insert web_log SET method="GetDashboard", text="'. $text. '", created="' . date("Y-m-d H:i:s") .'"';
+
+// KC 03/05/26 - Escape the log text to prevent SQL injection in the logging statement
+$escaped_log_text = mysqli_real_escape_string($mysqli_link, $text);
+$log_sql= 'insert web_log SET method="GetDashboard", text="'. $escaped_log_text. '", created="' . date("Y-m-d H:i:s") .'"';
 debug("Web log:" .$log_sql);
 
 
@@ -100,6 +103,19 @@ if( $hash != $key){
 	exit;
 }
 
+//-------------------------------------
+// KC 03/05/26 - SQL Injection Prevention
+// Now that hash verification has passed, escape ALL $_REQUEST input variables
+// before they are used in any SQL queries.
+//-------------------------------------
+$device_ID          = mysqli_real_escape_string($mysqli_link, $device_ID);          // from $_REQUEST["DeviceID"]
+$requestDate        = mysqli_real_escape_string($mysqli_link, $requestDate);        // from $_REQUEST["Date"]
+$mobile_version     = mysqli_real_escape_string($mysqli_link, $mobile_version);     // from $_REQUEST["MobileVersion"]
+$authorization_code = mysqli_real_escape_string($mysqli_link, $authorization_code); // from $_REQUEST["AC"]
+$key                = mysqli_real_escape_string($mysqli_link, $key);                // from $_REQUEST["Key"]
+$serial             = mysqli_real_escape_string($mysqli_link, $serial);             // from $_REQUEST["Serial"]
+//-------------------------------------
+
 // RKG 11/20/2015 make sure they have the currnet software version. 
 $current_mobile_version = get_setting("system","current_mobile_version");
     debug("current_mobile_version = " . $current_mobile_version );
@@ -133,6 +149,10 @@ $authorization_row = mysqli_fetch_assoc($result);
 
 $user_serial = $authorization_row["user_serial"];
 $subscriber_serial = $authorization_row["subscriber_serial"];
+
+// KC 03/05/26 - Escape DB-sourced values before using in SQL queries
+$user_serial       = mysqli_real_escape_string($mysqli_link, $user_serial);
+$subscriber_serial = mysqli_real_escape_string($mysqli_link, $subscriber_serial);
 
 debug("UserSerial: ".$user_serial );
 debug("Subscriber Serial: ".$subscriber_serial );
@@ -393,5 +413,3 @@ exit;
 
 
 ?>
-
-

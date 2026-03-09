@@ -16,16 +16,20 @@
 // History: 10/29/25 initial version created
 //          11/11/25 updated author name, error messages and stub
 //          11/14/25 updated error messages
+
+//          03/09/26 JLM - Added mysqli_real_escape_string sanitation for all accepted request parameters.
+//          03/09/26 JLM - Separated raw request values for hashing from escaped SQL-safe request values.
+//          03/09/26 JLM - Escaped web_log request payload before SQL insert.
 //***************************************************************
 
 $debugflag = false;
 // RKG 10/20/25 allow the debugflag to be switched on in the get method call
-if( isset($_REQUEST["debugflag"])) {
+if (isset($_REQUEST["debugflag"])) {
     $debugflag = true;
 }
 
 // this stops the java script from being written because this is a microservice API
-$suppress_javascript= true;
+$suppress_javascript = true;
 
 // be sure we can find the function file for inclusion
 if (file_exists('ccu_include/ccu_function.php')) {
@@ -54,15 +58,24 @@ if (file_exists("lib/mailer_sendgrid/send_email.php")) {
 debug("get the send output php");
 require_once('send_output.php');
 
-debug("ResetPassword"); 
+debug("ResetPassword");
 
 //-------------------------------------
 // Get the values passed in
-$device_ID = urldecode($_REQUEST["DeviceID"]); // alphanumeric up to 60 characters which uniquely identifies the mobile device (iphone, ipad, etc)
-$requestDate = $_REQUEST["Date"]; // date/time as a string – alphanumeric up to 20 [format: MM/DD/YYYY-HH:mm]
-$authorization_code = $_REQUEST["AC"]; // 40 character authorization code
-$key = $_REQUEST["Key"]; // alphanumeric 40, SHA-1 hash of the device ID + date string (MM/DD/YYYY-HH:mm) + AuthorizationCode
-$password = $_REQUEST["Password"] ?? ''; // new password, minimum 8 characters
+
+// JLM 03-09-26 - Read RAW request values for hashing/validation and create escaped SQL-safe copies for database usage
+$device_ID_raw = urldecode($_REQUEST["DeviceID"] ?? ""); // alphanumeric up to 60 characters which uniquely identifies the mobile device (iphone, ipad, etc)
+$requestDate_raw = $_REQUEST["Date"] ?? ""; // date/time as a string – alphanumeric up to 20 [format: MM/DD/YYYY-HH:mm]
+$authorization_code_raw = $_REQUEST["AC"] ?? ""; // 40 character authorization code
+$key_raw = $_REQUEST["Key"] ?? ""; // alphanumeric 40, SHA-1 hash of the device ID + date string (MM/DD/YYYY-HH:mm) + AuthorizationCode
+$password_raw = $_REQUEST["Password"] ?? ''; // new password, minimum 8 characters
+
+// JLM 03-09-26 - Apply mysqli_real_escape_string to all accepted request values for SQL-safe usage
+$device_ID = mysqli_real_escape_string($mysqli_link, $device_ID_raw);
+$requestDate = mysqli_real_escape_string($mysqli_link, $requestDate_raw);
+$authorization_code = mysqli_real_escape_string($mysqli_link, $authorization_code_raw);
+$key = mysqli_real_escape_string($mysqli_link, $key_raw);
+$password = mysqli_real_escape_string($mysqli_link, $password_raw);
 
 // ALC 10/29/25: Longitude and Latitude removed per boss instruction, not used in Giftology app
 // $longitude = $_REQUEST["Longitude"];
@@ -81,22 +94,25 @@ send_output($output);
 exit;
 
 
-$hash = sha1($device_ID . $requestDate . $authorization_code);
+// JLM 03-09-26 - Use RAW request values for hash computation so request authentication is not altered by escaping
+$hash = sha1($device_ID_raw . $requestDate_raw . $authorization_code_raw);
 
 // make a log entry for this call to the web service
 $text = var_export($_REQUEST, true);
 $test = str_replace(chr(34), "'", $text);
+// JLM 03-09-26 - Escape request log payload before building SQL insert statement
+$text = mysqli_real_escape_string($mysqli_link, $text);
 $log_sql = 'insert web_log SET method="ResetPassword", text="' . $text . '", created="' . date("Y-m-d H:i:s") . '"'; // ALC 10/29/25 updated method name
 debug("Web log: " . $log_sql);
 
 //-------------------------------------
 // Security check
-if ($hash != $key) {
+if ($hash != $key_raw) {
     debug("hash error. Key / Hash mismatch");
     $output = "<ResultInfo>
 <ErrorNumber>102</ErrorNumber>
 <Result>Fail</Result>
-<<Message>".get_text("rrservice", "_err102")."</Message>
+<<Message>" . get_text("rrservice", "_err102") . "</Message>
 </ResultInfo>";
     send_output($output);
     exit;
@@ -134,7 +150,7 @@ if ($rows == 1) {
     $output = "<ResultInfo>
 <ErrorNumber>105</ErrorNumber>
 <Result>Fail</Result>
-<<Message>".get_text("rrservice", "_err105")."</Message>
+<<Message>" . get_text("rrservice", "_err105") . "</Message>
 </ResultInfo>";
     send_output($output);
     exit;
@@ -164,6 +180,3 @@ debug("Giftology email service config loaded"); // changed crewzcontrol -> gifto
 //     debug("Email successfully sent to: " . $to_email);
 // }
 */
-
-?>
-

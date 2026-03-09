@@ -64,13 +64,51 @@ debug("GetContact");
 
 //-------------------------------------
 // Get the values passed in
-$device_ID          = urldecode($_REQUEST["DeviceID"] ?? "");
-    $requestDate        = $_REQUEST["Date"] ?? "";
-    $authorization_code = $_REQUEST["AC"] ?? "";
-    $key                = $_REQUEST["Key"] ?? "";
-    $language           = $_REQUEST["Language"] ?? "en";
-    $mobile_version     = $_REQUEST["MobileVersion"] ?? "1.0";
-    $target_contact_serial = $_REQUEST["ContactSerial"] ?? ""; 
+// Sanitize all incoming request values
+// JMF 03/09/26 Applied mysqli_real_escape_string to all request inputs
+
+$device_ID = "";
+$requestDate = "";
+$authorization_code = "";
+$key = "";
+$language = "en";
+$mobile_version = "1.0";
+$target_contact_serial = "";
+
+// DeviceID
+if(isset($_REQUEST["DeviceID"])){
+    $device_ID = mysqli_real_escape_string($mysqli_link, urldecode($_REQUEST["DeviceID"]));
+}
+
+// Date
+if(isset($_REQUEST["Date"])){
+    $requestDate = mysqli_real_escape_string($mysqli_link, $_REQUEST["Date"]);
+}
+
+// Authorization Code
+if(isset($_REQUEST["AC"])){
+    $authorization_code = mysqli_real_escape_string($mysqli_link, $_REQUEST["AC"]);
+}
+
+// Key
+if(isset($_REQUEST["Key"])){
+    $key = mysqli_real_escape_string($mysqli_link, $_REQUEST["Key"]);
+}
+
+// Language
+if(isset($_REQUEST["Language"])){
+    $language = mysqli_real_escape_string($mysqli_link, $_REQUEST["Language"]);
+}
+
+// Mobile Version
+if(isset($_REQUEST["MobileVersion"])){
+    $mobile_version = mysqli_real_escape_string($mysqli_link, $_REQUEST["MobileVersion"]);
+}
+
+// Contact Serial
+if(isset($_REQUEST["ContactSerial"])){
+    $target_contact_serial = mysqli_real_escape_string($mysqli_link, $_REQUEST["ContactSerial"]);
+} 
 
 $hash = sha1($device_ID . $requestDate.$authorization_code  );
 
@@ -296,3 +334,4 @@ while($row = mysqli_fetch_assoc($result)){
 
 echo json_encode($contacts);
 ?>
+

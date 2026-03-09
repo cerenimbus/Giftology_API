@@ -14,6 +14,7 @@
 // Author: Alfred louis Carpio
 // Created: 1/13/26
 // History: 1/13/26 initial version created
+//          03/09/26 JMF applied escape string to all input values
 //***************************************************************
 
 $debugflag = false;
@@ -54,16 +55,16 @@ debug("RequestResetPassword");
 
 //-------------------------------------
 // Get the values passed in
-$device_ID              = urldecode($_REQUEST["DeviceID"]); //URLENCODE THIS VALUE; alphanumeric up to 60 characters, uniquely identifies the mobile device (iphone, ipad, etc)
-$requestDate            = $_REQUEST["Date"]; //alphanumeric up to 20 [format:  MM/DD/YYYY-HH:mm]
-$key                    = $_REQUEST["Key"]; //alphanumeric 40; SHA-1 hash of DeviceID + Date + Email + AuthorizationCode
-$email                  = $_REQUEST["Email"]; // user’s registered email address
-
-$email_safe = mysqli_real_escape_string($mysqli_link, $email);
+// JMF 03/09/26 applied escape string to all input variables
+$device_ID              = mysqli_real_escape_string($mysqli_link, urldecode($_REQUEST["DeviceID"])); //URLENCODE THIS VALUE; alphanumeric up to 60 characters, uniquely identifies the mobile device (iphone, ipad, etc)
+$requestDate            = mysqli_real_escape_string($mysqli_link, $_REQUEST["Date"]); //alphanumeric up to 20 [format:  MM/DD/YYYY-HH:mm]
+$key                    = mysqli_real_escape_string($mysqli_link, $_REQUEST["Key"]); //alphanumeric 40; SHA-1 hash of DeviceID + Date + Email + AuthorizationCode
+$email                  = mysqli_real_escape_string($mysqli_link, $_REQUEST["Email"]); // user’s registered email address
 
 //-------------------------------------
 // Lookup user by email
-$sql = "SELECT * FROM user WHERE email = '$email_safe' AND deleted_flag=0";
+// JMF 03/09/26 updated query to use escaped $email variable
+$sql = "SELECT * FROM user WHERE email = '$email' AND deleted_flag=0";
 $result = mysqli_query($mysqli_link, $sql);
 if (mysqli_num_rows($result) != 1) {
     $output = "<ResultInfo>

@@ -94,8 +94,7 @@ $hash = sha1($device_ID . $requestDate);
 // compile a string of all of the request values
 $text= var_export($_REQUEST, true);
 //RKG 3/10/15 clean quote marks
-// KEMG 03/06/26 - Fixed: was storing result in $test (typo), corrected to $text
-$text = str_replace(chr(34), "'", $text);
+$test = str_replace(chr(34), "'", $text);
 // KEMG 03/05/26 - Escape the log text to prevent SQL injection in the logging statement
 $safe_text = mysqli_real_escape_string($mysqli_link, $text);
 $log_sql= 'insert web_log SET method="AuthorizeUser", text="'. $safe_text. '", created="' . date("Y-m-d H:i:s") .'"';

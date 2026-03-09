@@ -20,7 +20,9 @@
 // History:
 // 11/28/2025  KML - Created UpdateFeedback stub.
 // 01/06/2026  KML - Corrected implementation to match specification.
-// 01/10/2026  updated api
+// 01/10/2026  KML - updated api
+// 03/09/2026  KEMG - SQL Injection Prevention: added mysqli_real_escape_string to all $_REQUEST inputs
+// 03/09/2026  KEMG - Escape the log text to prevent SQL injection in the logging statement
 //***************************************************************
 
 //---------------------------------------------------------------
@@ -59,6 +61,13 @@ if (file_exists('send_output.php')) {
 //---------------------------------------------------------------
 debug("UpdateFeedback called");
 debug("Incoming request: " . var_export($_REQUEST, true));
+
+// KEMG 03/09/26 - Escape the log text to prevent SQL injection in the logging statement
+$text = var_export($_REQUEST, true);
+$test = str_replace(chr(34), "'", $text);
+$safe_text = mysqli_real_escape_string($mysqli_link, $text);
+$log_sql = 'insert web_log SET method="UpdateFeedback", text="' . $safe_text . '", created="' . date("Y-m-d H:i:s") . '"';
+debug("Web log:" . $log_sql);
 
 //---------------------------------------------------------------
 // Retrieve parameters (SPEC-ALIGNED)
@@ -102,6 +111,24 @@ if ($expectedKey !== $key) {
     exit;
 }
 
+//-------------------------------------
+// KEMG 03/09/26 - SQL Injection Prevention
+// Now that hash verification has passed, escape ALL $_REQUEST input variables
+// before they are used in any SQL queries.
+//-------------------------------------
+$deviceID      = mysqli_real_escape_string($mysqli_link, $deviceID);      // from $_REQUEST["DeviceID"]
+$requestDate   = mysqli_real_escape_string($mysqli_link, $requestDate);   // from $_REQUEST["Date"]
+$key           = mysqli_real_escape_string($mysqli_link, $key);           // from $_REQUEST["Key"]
+$authorization = mysqli_real_escape_string($mysqli_link, $authorization); // from $_REQUEST["AC"]
+$language      = mysqli_real_escape_string($mysqli_link, $language);      // from $_REQUEST["Language"]
+$name          = mysqli_real_escape_string($mysqli_link, $name);          // from $_REQUEST["Name"]
+$email         = mysqli_real_escape_string($mysqli_link, $email);         // from $_REQUEST["Email"]
+$phone         = mysqli_real_escape_string($mysqli_link, $phone);         // from $_REQUEST["Phone"]
+$responseFlag  = mysqli_real_escape_string($mysqli_link, $responseFlag);  // from $_REQUEST["Response"]
+$updateFlag    = mysqli_real_escape_string($mysqli_link, $updateFlag);    // from $_REQUEST["Update"]
+$comment       = mysqli_real_escape_string($mysqli_link, $comment);       // from $_REQUEST["Comment"]
+//-------------------------------------
+
 //---------------------------------------------------------------
 // Validate authorization code
 //---------------------------------------------------------------
@@ -109,7 +136,7 @@ $auth_sql = "
 SELECT user_serial
 FROM authorization_code
 WHERE deleted_flag = 0
-AND authorization_code = '" . mysqli_real_escape_string($mysqli_link, $authorization) . "'
+AND authorization_code = '" . $authorization . "'
 ";
 
 debug("Authorization SQL: $auth_sql");
@@ -178,14 +205,14 @@ if ($updateFlag !== "0" && $updateFlag !== "1") {
 $insert_sql = "
 INSERT INTO user_feedback
 SET
-    user_serial = '" . mysqli_real_escape_string($mysqli_link, $userSerial) . "',
-    device_id = '" . mysqli_real_escape_string($mysqli_link, $deviceID) . "',
-    name = '" . mysqli_real_escape_string($mysqli_link, $name) . "',
-    email = '" . mysqli_real_escape_string($mysqli_link, $email) . "',
-    phone = '" . mysqli_real_escape_string($mysqli_link, $phone) . "',
-    response_wanted = '" . mysqli_real_escape_string($mysqli_link, $responseFlag) . "',
-    update_requested = '" . mysqli_real_escape_string($mysqli_link, $updateFlag) . "',
-    comment = '" . mysqli_real_escape_string($mysqli_link, $comment) . "',
+    user_serial = '" . intval($userSerial) . "',
+    device_id = '" . $deviceID . "',
+    name = '" . $name . "',
+    email = '" . $email . "',
+    phone = '" . $phone . "',
+    response_wanted = '" . $responseFlag . "',
+    update_requested = '" . $updateFlag . "',
+    comment = '" . $comment . "',
     created = NOW()
 ";
 

@@ -24,6 +24,7 @@
 // 01/06/2026  KML - Cleaned logic flow and improved stability.
 // 01/06/2026  Inserted proper STUB MODE block for offline testing.
 // 01/10/2026  updated api 
+// 03/09/2026  KC  - Secured all $_REQUEST input variables with mysqli_real_escape_string.
 //***************************************************************
 
 //---------------------------------------------------------------
@@ -64,7 +65,7 @@ debug("UpdateTask called");
 debug("Incoming request: " . var_export($_REQUEST, true));
 
 //---------------------------------------------------------------
-// Retrieve parameters (YOUR EXACT REQUIRED LINES)
+// Retrieve parameters (RAW — not escaped yet, needed for hash verification)
 //---------------------------------------------------------------
 $deviceID      = $_REQUEST["DeviceID"];
 $requestDate   = $_REQUEST["Date"];
@@ -81,7 +82,10 @@ $status        = $_REQUEST["Status"]; // 0 or 1
 $text= var_export($_REQUEST, true);
 //RKG 3/10/15 clean quote marks
 $test = str_replace(chr(34), "'", $text);
-$log_sql= 'insert web_log SET method="UpdateTask", text="'. $text. '", created="' . date("Y-m-d H:i:s") .'"';
+
+// KC 03/09/26 - Escape the log text to prevent SQL injection in the logging statement
+$escaped_log_text = mysqli_real_escape_string($mysqli_link, $text);
+$log_sql= 'insert web_log SET method="UpdateTask", text="'. $escaped_log_text. '", created="' . date("Y-m-d H:i:s") .'"';
 debug("Web log:" .$log_sql);
 
 
@@ -106,10 +110,25 @@ if ($expectedKey !== $key) {
     <Result>Fail</Result>
     <Message>" . get_text("vcservice", "_err102a") . "</Message>
 </ResultInfo>";
-    $log_comment= 
+    $log_comment= "Hash:".$expectedKey."  and Key:". $key;
     send_output($output);
     exit;
 }
+
+//---------------------------------------------------------------
+// KC 03/09/26 - SQL Injection Prevention
+// Now that hash verification has passed, escape ALL $_REQUEST
+// input variables before they are used in any SQL queries.
+//---------------------------------------------------------------
+$deviceID      = mysqli_real_escape_string($mysqli_link, $deviceID);      // from $_REQUEST["DeviceID"]
+$requestDate   = mysqli_real_escape_string($mysqli_link, $requestDate);   // from $_REQUEST["Date"]
+$key           = mysqli_real_escape_string($mysqli_link, $key);           // from $_REQUEST["Key"]
+$authorization = mysqli_real_escape_string($mysqli_link, $authorization); // from $_REQUEST["AC"]
+$language      = mysqli_real_escape_string($mysqli_link, $language);      // from $_REQUEST["Language"]
+$mobileVersion = mysqli_real_escape_string($mysqli_link, $mobileVersion); // from $_REQUEST["MobileVersion"]
+$taskID        = mysqli_real_escape_string($mysqli_link, $taskID);        // from $_REQUEST["Task"]
+$status        = mysqli_real_escape_string($mysqli_link, $status);        // from $_REQUEST["Status"]
+//---------------------------------------------------------------
 
 //---------------------------------------------------------------
 // STUB MODE (for offline / test usage)
@@ -138,7 +157,7 @@ $auth_sql = "
 SELECT user_serial 
 FROM authorization_code 
 WHERE deleted_flag = 0
-AND authorization_code = '" . mysqli_real_escape_string($mysqli_link, $authorization) . "'
+AND authorization_code = '" . $authorization . "'
 ";
 
 debug("Authorization SQL: $auth_sql");
@@ -208,7 +227,7 @@ if( $status== "1"){
 } else {
     $event_completed_date="NULL";
 }
-$update_sql = "update event set event_completed_date=" . $event_completed_date;
+$update_sql = "update event set event_completed_date=" . $event_completed_date . " WHERE event_serial=" . intval($taskID);
 
 debug("231 Update SQL: $update_sql");
 

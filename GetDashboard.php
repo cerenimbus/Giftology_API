@@ -172,7 +172,7 @@ $output = "<ResultInfo>
 $sql = 'SELECT * 
     FROM contact 
 	join revenue on contact.contact_serial=revenue.contact_serial
-    WHERE user_serial ="' . $user_serial . '" 
+    WHERE contact.user_serial ="' . $user_serial . '" 
     AND contact.deleted_flag = 0 
 	AND revenue.deleted_flag = 0 
     ORDER BY first_name';
@@ -221,7 +221,7 @@ if (mysqli_error($mysqli_link)) {
 $sql = 'SELECT * 
     FROM contact 
     WHERE user_serial ="' . $user_serial . '" 
-    AND status="Runway Relationship:
+    AND status="Runway Relationship":
 	AND deleted_flag = 0 
     ORDER BY first_name';
 

@@ -221,7 +221,7 @@ if (mysqli_error($mysqli_link)) {
 $sql = 'SELECT * 
     FROM contact 
     WHERE user_serial ="' . $user_serial . '" 
-    AND status="Runway Relationship":
+    AND status="Runway Relationship"
 	AND deleted_flag = 0 
     ORDER BY first_name';
 

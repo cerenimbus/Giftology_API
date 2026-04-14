@@ -76,6 +76,18 @@ $key_raw                = (string)($_REQUEST["Key"] ?? "");
 $language_raw           = (string)($_REQUEST["Language"] ?? "");
 $mobile_version_raw     = (string)($_REQUEST["MobileVersion"] ?? "");
 
+// JLM 04-14-26 - Ensure mysqli connection is initialized before calling mysqli_real_escape_string.
+// Prevents fatal error causing 500 Internal Server Error if $mysqli_link is null/undefined.
+if (!isset($mysqli_link) || !$mysqli_link) {
+    $output = "<ResultInfo>
+        <ErrorNumber>500</ErrorNumber>
+        <Result>Fail</Result>
+        <Message>Database connection not initialized.</Message>
+    </ResultInfo>";
+    send_output($output);
+    exit;
+}
+
 // JLM 03-05-26 - Escape request params for safe SQL usage (do NOT use these escaped values for hashing)
 $device_ID_sql          = mysqli_real_escape_string($mysqli_link, $device_ID_raw);
 $requestDate_sql        = mysqli_real_escape_string($mysqli_link, $requestDate_raw);
@@ -97,7 +109,7 @@ $text = var_export($_REQUEST, true);
 $test = str_replace(chr(34), "'", $text);
 
 // JLM 03-05-26 - Escape the log text before inserting into SQL to prevent log SQL injection/breakage
-$log_text_sql = mysqli_real_escape_string($mysqli_link, $text);
+$log_text_sql = mysqli_real_escape_string($mysqli_link, $test);
 
 $log_sql = 'insert web_log SET method="GetContactList", text="' . $log_text_sql . '", created="' . date("Y-m-d H:i:s") . '"';
 debug("Web log:" . $log_sql);
@@ -217,7 +229,7 @@ if (mysqli_error($mysqli_link)) {
     $output = "<ResultInfo>
 		<ErrorNumber>103</ErrorNumber>
 		<Result>Fail</Result>
-		<Message>" . get_text("vcservice", "_err103a") . " " . $update_sql . " " . $error . "</Message>
+		<Message>" . get_text("vcservice", "_err103a") . " " . $sql . " " . $error . "</Message>
 		</ResultInfo>";
     debug("Mysql error: " . $error . " -- " . $sql);
     $log_comment = $error;

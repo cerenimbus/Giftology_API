@@ -99,7 +99,7 @@ $test = str_replace(chr(34), "'", $text);
 // JLM 03-05-26 - Escape the log text before inserting into SQL to prevent log SQL injection/breakage
 $log_text_sql = mysqli_real_escape_string($mysqli_link, $text);
 
-$log_sql = 'insert web_log SET method="GetContactList", text="' . $log_text_sql . '", created="' . date("Y-m-d H:i:s") . '"';
+$log_sql = 'insert INTO web_log SET method="GetContactList", text="' . $log_text_sql . '", created="' . date("Y-m-d H:i:s") . '"';
 debug("Web log:" . $log_sql);
 
 // FOR TESTING ONLY  write the values back out so we can see them

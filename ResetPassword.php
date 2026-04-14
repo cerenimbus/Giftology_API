@@ -20,6 +20,8 @@
 //          03/09/26 JLM - Added mysqli_real_escape_string sanitation for all accepted request parameters.
 //          03/09/26 JLM - Separated raw request values for hashing from escaped SQL-safe request values.
 //          03/09/26 JLM - Escaped web_log request payload before SQL insert.
+
+//          04/14/26 KEMG - Fixed double << typo in XML Message tags on error responses (lines 115, 153).
 //***************************************************************
 
 $debugflag = false;
@@ -112,7 +114,7 @@ if ($hash != $key_raw) {
     $output = "<ResultInfo>
 <ErrorNumber>102</ErrorNumber>
 <Result>Fail</Result>
-<<Message>" . get_text("rrservice", "_err102") . "</Message>
+<Message>" . get_text("rrservice", "_err102") . "</Message>
 </ResultInfo>";
     send_output($output);
     exit;
@@ -150,7 +152,7 @@ if ($rows == 1) {
     $output = "<ResultInfo>
 <ErrorNumber>105</ErrorNumber>
 <Result>Fail</Result>
-<<Message>" . get_text("rrservice", "_err105") . "</Message>
+<Message>" . get_text("rrservice", "_err105") . "</Message>
 </ResultInfo>";
     send_output($output);
     exit;

@@ -26,6 +26,8 @@
 //       03/05/26 JLM - Separated RAW request values (used for hashing/validation) from escaped SQL-safe copies.
 //       03/05/26 JLM - Escaped web_log insert payload to prevent SQL injection in logging.
 
+//       04/14/26 KEMG - Fixed missing INTO keyword in web_log INSERT SQL statement that caused 500 internal server error.
+
 
 $debugflag = false;
 if (isset($_REQUEST["debugflag"])) {
@@ -111,7 +113,7 @@ $test = str_replace(chr(34), "'", $text);
 // JLM 03-05-26 - Escape the log text before inserting into SQL to prevent log SQL injection/breakage
 $log_text_sql = mysqli_real_escape_string($mysqli_link, $test);
 
-$log_sql = 'insert web_log SET method="GetContactList", text="' . $log_text_sql . '", created="' . date("Y-m-d H:i:s") . '"';
+$log_sql = 'insert INTO web_log SET method="GetContactList", text="' . $log_text_sql . '", created="' . date("Y-m-d H:i:s") . '"';
 debug("Web log:" . $log_sql);
 
 // FOR TESTING ONLY  write the values back out so we can see them

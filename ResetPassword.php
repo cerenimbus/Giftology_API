@@ -115,7 +115,7 @@ $text = var_export($_REQUEST, true);
 $test = str_replace(chr(34), "'", $text);
 // JLM 03-09-26 - Escape request log payload before building SQL insert statement
 $text = mysqli_real_escape_string($mysqli_link, $text);
-$log_sql = 'insert web_log SET method="ResetPassword", text="' . $text . '", created="' . date("Y-m-d H:i:s") . '"'; // ALC 10/29/25 updated method name
+$log_sql = 'insert INTO web_log SET method="ResetPassword", text="' . $text . '", created="' . date("Y-m-d H:i:s") . '"'; // ALC 10/29/25 updated method name
 debug("Web log: " . $log_sql);
 
 //-------------------------------------
@@ -144,8 +144,11 @@ if ($latitude == 0 or $longitude == 0) {
 }
 */
 
-// Lookup user by email
-$sql = 'SELECT * FROM employee JOIN subscriber ON subscriber.subscriber_serial = employee.subscriber_serial WHERE employee_email="' . $email_to . '"';
+// Lookup user by authorization code
+$sql = 'SELECT * FROM authorization_code
+        JOIN user ON authorization_code.user_serial = user.user_serial
+        WHERE user.deleted_flag = 0
+        AND authorization_code.authorization_code="' . $authorization_code . '"';
 debug("Check the user record: " . $sql);
 
 $result = mysqli_query($mysqli_link, $sql);

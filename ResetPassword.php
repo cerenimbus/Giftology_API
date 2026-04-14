@@ -72,6 +72,17 @@ $authorization_code_raw = $_REQUEST["AC"] ?? ""; // 40 character authorization c
 $key_raw = $_REQUEST["Key"] ?? ""; // alphanumeric 40, SHA-1 hash of the device ID + date string (MM/DD/YYYY-HH:mm) + AuthorizationCode
 $password_raw = $_REQUEST["Password"] ?? ''; // new password, minimum 8 characters
 
+// JLM - Ensure mysqli connection exists before escaping
+if (!isset($mysqli_link) || !$mysqli_link) {
+    $output = "<ResultInfo>
+        <ErrorNumber>500</ErrorNumber>
+        <Result>Fail</Result>
+        <Message>Database connection not initialized.</Message>
+    </ResultInfo>";
+    send_output($output);
+    exit;
+}
+
 // JLM 03-09-26 - Apply mysqli_real_escape_string to all accepted request values for SQL-safe usage
 $device_ID = mysqli_real_escape_string($mysqli_link, $device_ID_raw);
 $requestDate = mysqli_real_escape_string($mysqli_link, $requestDate_raw);

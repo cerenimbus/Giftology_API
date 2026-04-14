@@ -26,6 +26,8 @@
 //       03/05/26 JLM - Separated RAW request values (used for hashing/validation) from escaped SQL-safe copies.
 //       03/05/26 JLM - Escaped web_log insert payload to prevent SQL injection in logging.
 
+//       04/14/26 KEMG - Fixed missing INTO keyword in web_log INSERT SQL statement that caused 500 internal server error.
+
 
 $debugflag = false;
 if (isset($_REQUEST["debugflag"])) {

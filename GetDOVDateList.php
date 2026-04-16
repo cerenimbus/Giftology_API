@@ -22,6 +22,7 @@
     01/06/2026   KML - Corrected to fully match API specification
     01/10/2026   updated api
     03/05/26     JMF - Applied mysqli_real_escape_string to all request parameters
+ *  04/16/26     KEMG - Added $mysqli_link guard, split raw/escaped vars, fixed hash to use raw values, set $log_sql early
 ******************************************************************/
 
 //---------------------------------------------------------------
@@ -58,15 +59,42 @@ debug("GetDOVDateList called");
 debug("Incoming request: " . var_export($_REQUEST, true));
 
 //---------------------------------------------------------------
-// Retrieve parameters (SPEC EXACT)
+// Retrieve raw parameters — used for hash validation (must match client key generation)
+//---------------------------------------------------------------
+$deviceID_raw      = $_REQUEST["DeviceID"]      ?? "";
+$requestDate_raw   = $_REQUEST["Date"]           ?? "";
+$key_raw           = $_REQUEST["Key"]            ?? "";
+$authorization_raw = $_REQUEST["AC"]             ?? "";
+$language_raw      = $_REQUEST["Language"]       ?? "EN";
+$mobileVersion_raw = $_REQUEST["MobileVersion"]  ?? "";
+
+//---------------------------------------------------------------
+// Validate DB connection before calling mysqli_real_escape_string
+//---------------------------------------------------------------
+if (!isset($mysqli_link) || !$mysqli_link) {
+    $output = "<ResultInfo>
+        <ErrorNumber>500</ErrorNumber>
+        <Result>Fail</Result>
+        <Message>Database connection not initialized.</Message>
+    </ResultInfo>";
+    send_output($output);
+    exit;
+}
+
+//---------------------------------------------------------------
+// Escape parameters for SQL — do NOT use these for hash computation
 // JMF 03/05/26 Applied mysqli_real_escape_string to all values accepted from $_REQUEST
 //---------------------------------------------------------------
-$deviceID      = mysqli_real_escape_string($mysqli_link, urldecode($_REQUEST["DeviceID"] ?? ""));
-$requestDate   = mysqli_real_escape_string($mysqli_link, $_REQUEST["Date"] ?? "");
-$key           = mysqli_real_escape_string($mysqli_link, $_REQUEST["Key"] ?? "");
-$authorization = mysqli_real_escape_string($mysqli_link, $_REQUEST["AC"] ?? "");
-$language      = mysqli_real_escape_string($mysqli_link, $_REQUEST["Language"] ?? "EN");
-$mobileVersion = mysqli_real_escape_string($mysqli_link, $_REQUEST["MobileVersion"] ?? "");
+$deviceID      = mysqli_real_escape_string($mysqli_link, $deviceID_raw);
+$requestDate   = mysqli_real_escape_string($mysqli_link, $requestDate_raw);
+$key           = mysqli_real_escape_string($mysqli_link, $key_raw);
+$authorization = mysqli_real_escape_string($mysqli_link, $authorization_raw);
+$language      = mysqli_real_escape_string($mysqli_link, $language_raw);
+$mobileVersion = mysqli_real_escape_string($mysqli_link, $mobileVersion_raw);
+
+// Now that $mysqli_link is confirmed valid, set $log_sql for send_output()
+$log_text_safe = mysqli_real_escape_string($mysqli_link, str_replace(chr(34), "'", var_export($_REQUEST, true)));
+$log_sql = 'INSERT INTO web_log SET method="GetDOVDateList", text="' . $log_text_safe . '", created="' . date("Y-m-d H:i:s") . '"';
 
 //---------------------------------------------------------------
 // Setup language
@@ -75,9 +103,9 @@ set_language($language);
 
 //---------------------------------------------------------------
 // Security hash validation
-// Formula: sha1(DeviceID + Date + AuthorizationCode)
+// Formula: sha1(DeviceID + Date + AuthorizationCode) — must use RAW values to match client
 //---------------------------------------------------------------
-$expectedKey = sha1($deviceID . $requestDate . $authorization);
+$expectedKey = sha1($deviceID_raw . $requestDate_raw . $authorization_raw);
 
 debug("ExpectedKey: $expectedKey");
 debug("ReceivedKey: $key");

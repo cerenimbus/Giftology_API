@@ -72,6 +72,10 @@ $authorization_code_raw = $_REQUEST["AC"] ?? ""; // 40 character authorization c
 $key_raw = $_REQUEST["Key"] ?? ""; // alphanumeric 40, SHA-1 hash of the device ID + date string (MM/DD/YYYY-HH:mm) + AuthorizationCode
 $password_raw = $_REQUEST["Password"] ?? ''; // new password, minimum 8 characters
 
+// Initialize log_sql early so send_output can log even on early-exit paths
+$text = var_export($_REQUEST, true);
+$text = str_replace(chr(34), "'", $text);
+
 // JLM - Ensure mysqli connection exists before escaping
 if (!isset($mysqli_link) || !$mysqli_link) {
     $output = "<ResultInfo>
@@ -89,6 +93,10 @@ $requestDate = mysqli_real_escape_string($mysqli_link, $requestDate_raw);
 $authorization_code = mysqli_real_escape_string($mysqli_link, $authorization_code_raw);
 $key = mysqli_real_escape_string($mysqli_link, $key_raw);
 $password = mysqli_real_escape_string($mysqli_link, $password_raw);
+
+// Set log_sql now that we have a valid connection and escaped values
+$text_escaped = mysqli_real_escape_string($mysqli_link, $text);
+$log_sql = 'insert INTO web_log SET method="ResetPassword", text="' . $text_escaped . '", created="' . date("Y-m-d H:i:s") . '"';
 
 // ALC 10/29/25: Longitude and Latitude removed per boss instruction, not used in Giftology app
 // $longitude = $_REQUEST["Longitude"];

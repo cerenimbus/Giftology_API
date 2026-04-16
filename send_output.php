@@ -23,13 +23,14 @@ function send_output( $output){
 	// Excute the insert and check for success
 	debug("Final Log Entry: ". $temp);
 
-	$result= mysqli_query($mysqli_link, $temp );
+	if ($log_sql) {
+		$result= mysqli_query($mysqli_link, $temp );
 
-	if ( mysqli_error($mysqli_link)) {
-		echo "send output web log error ". mysqli_error($mysqli_link);
-		exit;
-	} else {
-		//debug("Web log written: ");
+		if ( mysqli_error($mysqli_link)) {
+			debug("send output web log error ". mysqli_error($mysqli_link));
+		} else {
+			//debug("Web log written: ");
+		}
 	}
 
 	echo $output;
